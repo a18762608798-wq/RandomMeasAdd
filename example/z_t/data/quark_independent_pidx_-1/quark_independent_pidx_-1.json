@@ -1,0 +1,36 @@
+{
+  "runner": "quark",
+  "ensemble": "haar",
+  "setting_runs": [
+    [
+      27,
+      1024
+    ],
+    [
+      81,
+      1024
+    ]
+  ],
+  "num_qubits": 8,
+  "num_clbits": 4,
+  "meas_indices": [
+    [
+      2
+    ],
+    [
+      5
+    ],
+    [
+      3
+    ],
+    [
+      4
+    ]
+  ],
+  "npz_files": [
+    "quark_independent_pidx_-1_setting0_settings27_shots1024.npz",
+    "quark_independent_pidx_-1_setting1_settings81_shots1024.npz"
+  ],
+  "chip": "Dongling",
+  "target_qubits": []
+}

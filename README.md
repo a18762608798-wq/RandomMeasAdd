@@ -4,25 +4,15 @@
 
 ## 安装
 
-```julia
-using Pkg
-Pkg.add(url="git@github.com:a18762608798-wq/RandomMeasAdd.git")
-```
+详见 [INSTALL.md](INSTALL.md).
 
-本地可编辑安装：
+## 快速开始
 
-```julia
-using Pkg
-Pkg.develop(path=expanduser("~/RandomMeasAdd"))
-```
+示例在 [`example/`](example/) 下，分两个目录：
 
-## 测试
+- [`example/z_r/`](example/z_r/)
 
-```bash
-julia --project=. -e 'using Pkg; Pkg.test()'
-```
-
-测试数据生成脚本在 `test/get_data/`（Python，需 `qiskit` / `quarkstudio`）。
+- [`example/z_t/`](example/z_t/)
 
 ## License
 
