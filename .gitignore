@@ -20,3 +20,6 @@ __pycache__/
 .vscode/
 .idea/
 .DS_Store
+
+# Local test data (generated, not tracked)
+test/data/
