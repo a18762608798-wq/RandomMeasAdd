@@ -1,0 +1,21 @@
+name = "RandomMeasAdd"
+uuid = "eefc931d-92cc-47b9-8157-1cd7991dd1f7"
+version = "0.1.0"
+authors = ["git_usr <a18762608798@petalmail.com>"]
+license = "Apache-2.0"
+
+[deps]
+Combinatorics = "861a8166-3701-5b0c-9a16-15d98fcdc6aa"
+CondaPkg = "992eb4ea-22a4-4c89-a5bb-47a3300528ab"
+NPZ = "15e1cf62-19b3-5cfa-8e77-841668bca605"
+ProgressMeter = "92933f4c-e287-5a05-a399-4b506db050ca"
+RandomMeas = "a9f96d1f-ed6a-4404-822f-5927c777f274"
+Statistics = "10745b16-79ce-11e8-11f9-7d13ad32a3b2"
+
+[compat]
+Combinatorics = "1.1.0"
+CondaPkg = "0.2.36"
+NPZ = "0.4.3"
+ProgressMeter = "1.11.0"
+RandomMeas = "0.3.1"
+Statistics = "1.11.4"

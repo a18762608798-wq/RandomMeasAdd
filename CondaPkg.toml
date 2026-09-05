@@ -1,0 +1,6 @@
+
+[pip.deps.qmeas]
+editable = true
+version = "@file:///home/mintusr/sync/theory/physics/contemporary_physics/quant_comp_note/03_tools_practice/qmeas"
+[deps]
+qiskit = ""
