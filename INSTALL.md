@@ -5,15 +5,16 @@
 从 GitHub 安装：
 
 ```julia
+julia --project=/你的项目路径 # 进入目标目录后.
 using Pkg
 Pkg.add(url="git@github.com:a18762608798-wq/RandomMeasAdd.git")
 ```
 
-本地可编辑安装：
+更新（`Pkg.add` 是惰性的：装过就跳过，不去云端看；要拿新版显式升级）：
 
 ```julia
 using Pkg
-Pkg.develop(path=expanduser("~/RandomMeasAdd"))
+Pkg.update("RandomMeasAdd")
 ```
 
 ## Python 依赖：qmeas
