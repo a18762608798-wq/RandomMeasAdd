@@ -21,17 +21,10 @@ Pkg.update("RandomMeasAdd")
 
 ## Python 依赖：qmeas
 
-数据生成脚本（[`test/get_data/`](test/get_data/)、[`example/*/gen_data.py`](example/)）需要 Python 库 `qmeas`
-（另含 `qiskit`，aer 模拟用；quark 真机另需 `quarkstudio`），来源在 `CondaPkg.toml` 里声明好（qmeas 钉住 GitHub 版本）。
-
-注意：`CondaPkg.toml` 只是声明，`Pkg.add` 和 `using` 都不会自动装，必须手动触发一次解析安装（装好后一劳永逸），在项目环境里执行：
-
 ```julia
 julia> using CondaPkg
 julia> CondaPkg.resolve()
 ```
-
-之后 `CondaPkg.which("python")`、`withenv`、`conda run` 等接口每次都会先自动检查一遍，不用再调。
 
 ### 用 CondaPkg 的 Python 跑脚本
 
@@ -45,4 +38,3 @@ pkg> conda run python example/z_r/gen_data.py
 
 不用 REPL 的话，直接调该环境的 `python` 也行（具体路径以后端为准，可用 `CondaPkg.which("python")` 查询；
 本机 pixi 后端一般是 `.CondaPkg/.pixi/envs/default/bin/python`）。
-
