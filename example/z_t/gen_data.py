@@ -2,7 +2,6 @@
 
 参考 test/get_data/quark/；需 QUARK_TOKEN 环境变量与芯片比特映射；
 输出到本目录 data/，共两组小 SettingRun。
-运行：python example/z_t/gen_data.py（需 qmeas 环境）
 """
 
 import asyncio
