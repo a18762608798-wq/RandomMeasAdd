@@ -10,6 +10,9 @@ stats$/
 # CondaPkg
 .CondaPkg/
 
+# Data
+data/
+
 # Python helpers (test data generators)
 __pycache__/
 *.py[cod]

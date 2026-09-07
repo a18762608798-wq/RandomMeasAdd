@@ -5,11 +5,10 @@
 从 GitHub 安装：
 
 ```julia
-julia --project=/你的项目路径 # 进入目标目录后.
+# cd 进入目标目录后.
 using Pkg
-Pkg.add(url="git@github.com:a18762608798-wq/RandomMeasAdd.git")
-using CondaPkg
-CondaPkg.resolve()
+Pkg.activate(".")
+Pkg.add(url="https://github.com/a18762608798-wq/RandomMeasAdd.git")
 ```
 
 更新（`Pkg.add` 是惰性的：装过就跳过，不去云端看；要拿新版显式升级）：
@@ -21,20 +20,25 @@ Pkg.update("RandomMeasAdd")
 
 ## Python 依赖：qmeas
 
+### python venv
+
+参考qmeas安装流程(自动安装相关依赖):
+
+[INSTALL](https://github.com/a18762608798-wq/qmeas/blob/master/INSTALL.md)
+
+### CondaPkg
+
 ```julia
 julia> using CondaPkg
 julia> CondaPkg.resolve()
 ```
 
-### 用 CondaPkg 的 Python 跑脚本
-
 想用 Julia 项目自带的 Conda 环境里的 Python（已含上述依赖）跑数据生成脚本时，在 Pkg REPL 里用 `conda run`：
 
 ```julia
-julia --project=.
-julia> using CondaPkg
-pkg> conda run python example/z_r/gen_data.py
+# cd 进入目标目录后.
+using Pkg
+Pkg.activate(".")
+using CondaPkg
+pkg> conda run python example/aer/shadow_data.py
 ```
-
-不用 REPL 的话，直接调该环境的 `python` 也行（具体路径以后端为准，可用 `CondaPkg.which("python")` 查询；
-本机 pixi 后端一般是 `.CondaPkg/.pixi/envs/default/bin/python`）。

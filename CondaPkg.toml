@@ -3,4 +3,4 @@
 qiskit = ""
 
 [pip.deps.qmeas]
-version = "@git+https://github.com/a18762608798-wq/qmeas.git@b3a2e62d7953df5405ab8dc2e1c38d2ce36b3213"
+version = "@git+https://github.com/a18762608798-wq/qmeas.git@master"

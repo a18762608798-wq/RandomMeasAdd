@@ -10,9 +10,11 @@
 
 示例在 [`example/`](example/) 下，分两个目录：
 
-- [`example/z_r/`](example/z_r/)
+- [`example/aer/`](example/aer/)
 
-- [`example/z_t/`](example/z_t/)
+- [`example/quark/`](example/quark/)
+
+- [example/postprocess/](example/postprocess/)
 
 ## License
 
