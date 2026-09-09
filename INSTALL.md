@@ -33,7 +33,8 @@ julia> using CondaPkg
 julia> CondaPkg.resolve()
 ```
 
-想用 Julia 项目自带的 Conda 环境里的 Python（已含上述依赖）跑数据生成脚本时，在 Pkg REPL 里用 `conda run`：
+想用 Julia 项目自带的 Conda 环境里的 Python（已含上述依赖）跑数据生成脚本时，在
+Pkg REPL 里用 `conda run`：
 
 ```julia
 # cd 进入目标目录后.
