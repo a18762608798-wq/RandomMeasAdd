@@ -2,6 +2,7 @@
 include("shadow/basics.jl")
 include("shadow/reflect.jl")
 include("shadow/purity.jl")
+include("shadow/reversal.jl")
 include("shadow/z_r.jl")
 include("shadow/z_t.jl")
 include("hamming/basics.jl")

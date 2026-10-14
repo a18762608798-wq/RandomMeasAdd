@@ -6,16 +6,6 @@
 
 详见 [INSTALL.md](INSTALL.md).
 
-## 快速开始
-
-示例在 [`example/`](example/) 下，分两个目录：
-
-- [`example/aer/`](example/aer/)
-
-- [`example/quark/`](example/quark/)
-
-- [example/postprocess/](example/postprocess/)
-
 ## License
 
 Apache-2.0，见 `LICENSE`。

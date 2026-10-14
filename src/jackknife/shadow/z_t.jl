@@ -35,13 +35,11 @@ function get_z_t_loos_shadow(
 )
     n_ru, _ = size(shadows)
     @assert n_ru ≥ 3 "At least 3 random unitaries are required for z_t estimation."
-    zt_combs = collect(combinations(1:n_ru, 2))
     purity_combs = collect(combinations(1:n_ru, 2))
 
-    _, zt_comb_avgs = get_reversal_comb_avgs_shadow(
+    zt_expect, zt_loos = get_reversal_loos_shadow(
         vec(shadows), uT, tpos; is_show_progress=is_show_progress
     )
-    zt_expect = mean(zt_comb_avgs)
     odd_comb_avgs = get_comb_avgs_shadow(
         odd_shadows, 2; is_show_progress=is_show_progress
     )
@@ -52,11 +50,6 @@ function get_z_t_loos_shadow(
     even_expect = mean(even_comb_avgs)
 
     # Loo 分组：leave-one-out。
-    zt_loos = get_combs_loos_shadow(
-        n_ru,
-        zt_combs,
-        zt_comb_avgs,
-    )
     odd_loos = get_combs_loos_shadow(
         n_ru,
         purity_combs,

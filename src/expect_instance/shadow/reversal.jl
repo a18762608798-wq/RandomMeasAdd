@@ -28,8 +28,8 @@ get_reversal_shadow(permuted_group, permuted_indices, G; is_compute_sem, is_show
 
 说明
 本函数为重排后的系统构造 dense shadow，再构造 u_T 算符，
-经 get_reversal_comb_avgs_shadow + get_combs_loos_shadow
-算估计和 jackknife SEM（k=2 路线，与 purity shadow 对齐）。
+经 get_reversal_loos_shadow 算估计和 jackknife SEM
+（k=2 路线，与 purity shadow 对齐）。
 """
 function get_reversal_shadow(
     permuted_group,
@@ -50,13 +50,11 @@ function get_reversal_shadow(
     )
 
     n_ru = length(shadows)
-    combs, avgs = get_reversal_comb_avgs_shadow(
+    zt_est, loos = get_reversal_loos_shadow(
         shadows, uT, odd_order; is_show_progress=is_show_progress
     )
-    zt_est = mean(avgs)
 
     if is_compute_sem
-        loos = get_combs_loos_shadow(n_ru, combs, avgs)
         variance = (n_ru - 1)^2 / n_ru * var(loos)
         sem = sqrt(variance)
         return zt_est, sem

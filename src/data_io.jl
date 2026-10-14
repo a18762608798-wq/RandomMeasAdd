@@ -99,6 +99,7 @@ function import_random_pair(filepath1::String, filepath2::String; permuted_order
     @assert dim.(permuted_indices1) == dim.(permuted_indices2) "两份实验的 site 布局不一致：检查 meas_indices 与 permuted_order 是否相同。"
     @assert group1.N == group2.N "两份实验的比特数必须一致。"
     @assert group1.NU == group2.NU "两份实验的设置数必须一致且逐行配对。"
+    @assert group1.NM == group2.NM "两份实验的每设置 shots 数必须一致。"
     return group1, group2, permuted_indices1, G1, G2
 end
 
