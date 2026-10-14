@@ -9,7 +9,7 @@
 # 布局约定：重排 frame 下 I_1、I_2 须奇偶相间（奇位 = I_1、偶位 = I_2），
 # 生成数据时 meas_indices 取 [(i1_1,), (i2_1,), ...] 交错排列。
 """
-get_z_t_hamming(group1, group2; is_compute_sem, is_show_progress)
+get_z_t_hamming(group1, group2; trivial1, trivial2, is_mitigation, is_compute_sem, is_show_progress)
 
 用 Hamming 距离法从两份重排好的测量 group 算 z_t，
 对各配对设置求平均后再组合。
@@ -19,6 +19,11 @@ get_z_t_hamming(group1, group2; is_compute_sem, is_show_progress)
 - group2：实验二的重排 group，设置须与 group1 逐行配对。
 
 关键词参数
+- trivial1/trivial2：两份实验各自重排好的 trivial group，仅
+  is_mitigation=true 时需要。
+- is_mitigation::Bool：为 true 时用两份 trivial 数据做 Robust Hamming 缓解：
+  分子用跨实验核，分母两份实验的纯度各用各的 trivial 标定后再平均；
+  无噪声极限退化为标准核。
 - is_compute_sem::Bool：为 true 时同时返回 jackknife 偏差估计和 SEM。
 - is_show_progress::Bool：为 true 时显示进度。
 
@@ -28,11 +33,15 @@ get_z_t_hamming(group1, group2; is_compute_sem, is_show_progress)
 
 说明
 本函数对每个配对设置分别算互关联估计与两份实验平均的奇偶子系统纯度估计，
+（缓解时各路各用各的标定核），
 再经 get_z_t_loos_hamming 按比值组合（含 setting 层面 jackknife）。
 """
 function get_z_t_hamming(
     group1,
     group2;
+    trivial1=nothing,
+    trivial2=nothing,
+    is_mitigation=false,
     is_compute_sem=false,
     is_show_progress=false,
 )
@@ -50,6 +59,14 @@ function get_z_t_hamming(
     even_group1 = reduce_to_subsystem(group1, even_order)
     odd_group2 = reduce_to_subsystem(group2, odd_order)
     even_group2 = reduce_to_subsystem(group2, even_order)
+    if is_mitigation
+        @assert !isnothing(trivial1) && !isnothing(trivial2) "is_mitigation=true 要求传入两份 trivial group（经 import_random_pair 的 is_return_trivial 开关取得）。"
+        zxs, zys = get_cross_xy(trivial1, trivial2, 1:qubits_num)
+        oxs1, oys1 = get_purity_xy(trivial1, odd_order)
+        exs1, eys1 = get_purity_xy(trivial1, even_order)
+        oxs2, oys2 = get_purity_xy(trivial2, odd_order)
+        exs2, eys2 = get_purity_xy(trivial2, even_order)
+    end
 
     # 每个配对设置各算一路估计
     u_num = group1.NU
@@ -64,15 +81,27 @@ function get_z_t_hamming(
     even_ests = Vector{Float64}(undef, u_num)
 
     @showprogress desc="hamming_est..." enabled=is_show_progress @threads for u_idx = 1:u_num
-        zt_ests[u_idx] = get_reversal_hamming(datas1[u_idx], datas2[u_idx])
-        odd_ests[u_idx] = (
-            get_overlap(odd_datas1[u_idx], odd_datas1[u_idx]; apply_bias_correction=true) +
-            get_overlap(odd_datas2[u_idx], odd_datas2[u_idx]; apply_bias_correction=true)
-        ) / 2
-        even_ests[u_idx] = (
-            get_overlap(even_datas1[u_idx], even_datas1[u_idx]; apply_bias_correction=true) +
-            get_overlap(even_datas2[u_idx], even_datas2[u_idx]; apply_bias_correction=true)
-        ) / 2
+        if is_mitigation
+            zt_ests[u_idx] = get_overlap_robust(datas1[u_idx], datas2[u_idx], zxs, zys; apply_bias_correction=false)
+            odd_ests[u_idx] = (
+                get_overlap_robust(odd_datas1[u_idx], odd_datas1[u_idx], oxs1, oys1; apply_bias_correction=true) +
+                get_overlap_robust(odd_datas2[u_idx], odd_datas2[u_idx], oxs2, oys2; apply_bias_correction=true)
+            ) / 2
+            even_ests[u_idx] = (
+                get_overlap_robust(even_datas1[u_idx], even_datas1[u_idx], exs1, eys1; apply_bias_correction=true) +
+                get_overlap_robust(even_datas2[u_idx], even_datas2[u_idx], exs2, eys2; apply_bias_correction=true)
+            ) / 2
+        else
+            zt_ests[u_idx] = get_reversal_hamming(datas1[u_idx], datas2[u_idx])
+            odd_ests[u_idx] = (
+                get_overlap(odd_datas1[u_idx], odd_datas1[u_idx]; apply_bias_correction=true) +
+                get_overlap(odd_datas2[u_idx], odd_datas2[u_idx]; apply_bias_correction=true)
+            ) / 2
+            even_ests[u_idx] = (
+                get_overlap(even_datas1[u_idx], even_datas1[u_idx]; apply_bias_correction=true) +
+                get_overlap(even_datas2[u_idx], even_datas2[u_idx]; apply_bias_correction=true)
+            ) / 2
+        end
     end
 
     z_t_est, z_t_loos = get_z_t_loos_hamming(zt_ests, odd_ests, even_ests)
@@ -91,7 +120,6 @@ end
 get_z_t_hamming(filepath1, filepath2; permuted_order, is_mitigation, is_compute_sem, is_show_progress)
 
 文件版重载：经 `import_random_pair` 导入配对数据再调核心方法。
-注意 hamming 方法暂未实现误差缓解，`is_mitigation` 只能为 false。
 
 参数
 - filepath1::String：实验一的 .npz 文件路径。
@@ -100,7 +128,8 @@ get_z_t_hamming(filepath1, filepath2; permuted_order, is_mitigation, is_compute_
 关键词参数
 - permuted_order：全部被测 site 的置换向量，缺省 `nothing` 表示链式。
   两份实验测的是同一区间，必须共用同一 permuted_order。
-- is_mitigation::Bool=false：占位输入，hamming 暂未实现误差缓解，只能为 false。
+- is_mitigation::Bool=false：为 true 时用两份 npz 内 trivial 数据做
+  Robust Hamming 缓解（要求生成数据时开 mitigation）；为 false 时忽略。
 - is_compute_sem::Bool：为 true 时同时返回 jackknife 偏差估计和 SEM。
 - is_show_progress::Bool：为 true 时显示进度。
 
@@ -118,7 +147,6 @@ function get_z_t_hamming(
     is_compute_sem=false,
     is_show_progress=false,
 )
-    @assert !is_mitigation "get_z_t_hamming 暂未实现误差缓解，is_mitigation 只能为 false"
     if isdir(filepath1)
         all_files = sort(filter(
             f -> endswith(f, ".npz"), readdir(filepath1; join=true)
@@ -141,13 +169,13 @@ function get_z_t_hamming(
         end
         return vals, sems
     end
-    group1, group2, _, _, _ = import_random_pair(
-        filepath1, filepath2; permuted_order, is_mitigation
+    group1, group2, _, _, _, trivial1, trivial2 = import_random_pair(
+        filepath1, filepath2; permuted_order, is_mitigation, is_return_trivial=true
     )
     return get_z_t_hamming(
         group1,
         group2;
-        is_compute_sem, is_show_progress,
+        trivial1, trivial2, is_mitigation, is_compute_sem, is_show_progress,
     )
 end
 

@@ -8,6 +8,10 @@ include("data_io.jl")
 # shadow 工具
 include("shadow_utils.jl")
 
+# robust Hamming 标定与核（hamming 路线误差缓解用）
+include("robust_hamming/calibration.jl")
+include("robust_hamming/kernels.jl")
+
 # jackknife
 include("jackknife/jackknife.jl")
 

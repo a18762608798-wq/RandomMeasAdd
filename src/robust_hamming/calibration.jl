@@ -1,0 +1,201 @@
+# ---------------------
+# Robust Hamming 标定：由 trivial（|0>）数据估计每单元的核权重 (x̂, ŷ)。
+# ---------------------
+# 物理背景见笔记 RES-Robust_Hamming.md：
+# 三个量共用同一套单比特核形状 ĝ(s,s') = x̂（同）/ ŷ（异），
+# 差别只在“哪两个比特配对”与标定量 R̂、f̂0 怎么数：
+# - purity：同比特、不同 shot 配对（k≠k'），一支 trivial 数据，δ 两条腿相同；
+# - Z_R：同发内镜像对 (i, ī) 配对，一支 trivial 数据，两点通道各一个 δ；
+# - Z_T：两份实验同一比特配对，两支 trivial 数据（exp1 带 u_T），每实验各一个 δ。
+# 无噪声极限 R̂=2/3、δ̂=0 给出 x̂=2、ŷ=-1，退化为标准 Hamming 核。
+
+"""
+把读出值转成物理比特（0/1）：import 进来的数据是 2.-bit 后的 {1,2}，
+其中 2 ↔ 物理 0；手造的 {0,1} 数据也接受，0 ↔ 物理 0。
+返回 1 表示物理 0，否则返回 0（供 f̂0 计数用）。
+"""
+function _to_zero_bit(v::Int)
+    v == 2 && return 1
+    v == 0 && return 1
+    v == 1 && return 0
+    error("measurement value $v 不在 {0,1} 或 {1,2} 约定内，无法判定物理比特。")
+end
+
+"""
+get_f0(group, cols) -> Vector{Float64}
+
+trivial 组指定列的 0 频率 f̂0（全部 setting × shot 平均），每列一个。
+δ̂ = 2f̂0 - 1 由调用方组装。
+"""
+function get_f0(group, cols::AbstractVector{Int}=1:group.N)
+    nus = group.measurements
+    f0 = zeros(Float64, length(cols))
+    total = 0
+    for data in nus
+        res = data.measurement_results
+        nm = data.NM
+        total += nm
+        for (j, c) in enumerate(cols)
+            s = 0
+            for k in 1:nm
+                s += _to_zero_bit(res[k, c])
+            end
+            f0[j] += s
+        end
+    end
+    return f0 ./ total
+end
+
+"""
+get_R_purity(group, cols) -> Vector{Float64}
+
+purity 配对的符合率 R̂：同列、不同 shot (k≠k') 的符合分数，
+先每 setting 按 matches/(NM*(NM-1)) 算，再对 setting 平均。
+"""
+function get_R_purity(group, cols::AbstractVector{Int}=1:group.N)
+    nus = group.measurements
+    nu = length(nus)
+    R = zeros(Float64, length(cols))
+    for data in nus
+        res = data.measurement_results
+        nm = data.NM
+        @assert nm ≥ 2 "purity 标定要求每 setting 至少 2 shots。"
+        denom = nm * (nm - 1)
+        for (j, c) in enumerate(cols)
+            c0 = 0
+            for k in 1:nm
+                c0 += _to_zero_bit(res[k, c])
+            end
+            c1 = nm - c0
+            R[j] += (c0 * (c0 - 1) + c1 * (c1 - 1)) / denom
+        end
+    end
+    return R ./ nu
+end
+
+"""
+get_R_mirror(group, as, bs) -> Vector{Float64}
+
+Z_R 配对的符合率 R̂：同发内镜像对 (as[p], bs[p]) 的符合分数，
+对全部 (setting, shot) 平均。每对一个。
+"""
+function get_R_mirror(group, as::AbstractVector{Int}, bs::AbstractVector{Int})
+    @assert length(as) == length(bs) "镜像对两侧数量必须一致。"
+    nus = group.measurements
+    np = length(as)
+    R = zeros(Float64, np)
+    total = 0
+    for data in nus
+        res = data.measurement_results
+        nm = data.NM
+        total += nm
+        for k in 1:nm
+            for p in 1:np
+                R[p] += (res[k, as[p]] == res[k, bs[p]])
+            end
+        end
+    end
+    return R ./ total
+end
+
+"""
+get_R_cross(group1, group2, cols) -> Vector{Float64}
+
+Z_T 配对的符合率 R̂：两份实验同列、全部 (k,k') 配对的符合分数，
+每 setting 按 (c0₁c0₂+c1₁c1₂)/NM² 算，再对 setting 平均。
+两份数据的 NM 必须一致（import_random_pair 已保证）。
+"""
+function get_R_cross(group1, group2, cols::AbstractVector{Int}=1:group1.N)
+    nus1 = group1.measurements
+    nus2 = group2.measurements
+    @assert length(nus1) == length(nus2) "两份实验的设置数必须一致。"
+    nu = length(nus1)
+    R = zeros(Float64, length(cols))
+    for (data1, data2) in zip(nus1, nus2)
+        res1 = data1.measurement_results
+        res2 = data2.measurement_results
+        nm = data1.NM
+        @assert nm == data2.NM "两份实验的每设置 shots 数必须一致。"
+        for (j, c) in enumerate(cols)
+            c0a = 0
+            c0b = 0
+            for k in 1:nm
+                c0a += _to_zero_bit(res1[k, c])
+                c0b += _to_zero_bit(res2[k, c])
+            end
+            R[j] += (c0a * c0b + (nm - c0a) * (nm - c0b)) / nm^2
+        end
+    end
+    return R ./ nu
+end
+
+"""
+get_xy(R, da, db) -> (x, y)
+
+由符合率 R̂ 与两条腿的 δ̂ 组装核权重：
+ε̂ = da*db，Â = 6R̂-2-2ε̂，q̂ = 3/(Â-1-ε̂)，p̂ = 1-ε̂q̂，
+x̂ = (p̂+q̂)/2，ŷ = (p̂-q̂)/2。
+"""
+function get_xy(R::Float64, da::Float64, db::Float64)
+    eps = da * db
+    A = 6R - 2 - 2eps
+    denom = A - 1 - eps
+    @assert !iszero(denom) "标定分母 Â-1-ε̂ 为零（R̂=$(R)，δ=($(da),$(db))）：trivial 数据退化，无从标定。"
+    q = 3 / denom
+    p = 1 - eps * q
+    return (p + q) / 2, (p - q) / 2
+end
+
+"""
+get_purity_xy(triv, cols) -> (xs, ys)
+
+purity 标定的成套核权重：δ 两条腿相同（δ̂=2f̂0-1），R̂ 取跨 shot 符合率。
+"""
+function get_purity_xy(triv, cols::AbstractVector{Int}=1:triv.N)
+    f0 = get_f0(triv, cols)
+    R = get_R_purity(triv, cols)
+    n = length(cols)
+    xs = Vector{Float64}(undef, n)
+    ys = Vector{Float64}(undef, n)
+    for j in 1:n
+        d = 2 * f0[j] - 1
+        xs[j], ys[j] = get_xy(R[j], d, d)
+    end
+    return xs, ys
+end
+
+"""
+get_mirror_xy(triv, as, bs) -> (xs, ys)
+
+Z_R 标定的成套核权重：δ 按对内左右两侧各自的 f̂0 估计，R̂ 取同发镜像符合率。
+"""
+function get_mirror_xy(triv, as::AbstractVector{Int}, bs::AbstractVector{Int})
+    fa = get_f0(triv, as)
+    fb = get_f0(triv, bs)
+    R = get_R_mirror(triv, as, bs)
+    n = length(as)
+    xs = Vector{Float64}(undef, n)
+    ys = Vector{Float64}(undef, n)
+    for p in 1:n
+        xs[p], ys[p] = get_xy(R[p], 2 * fa[p] - 1, 2 * fb[p] - 1)
+    end
+    return xs, ys
+end
+
+"""
+get_cross_xy(triv1, triv2, cols) -> (xs, ys)
+
+Z_T 标定的成套核权重：δ₁/δ₂ 取两份实验各自的 f̂0，R̂ 取跨实验符合率。
+"""
+function get_cross_xy(triv1, triv2, cols::AbstractVector{Int}=1:triv1.N)
+    f1 = get_f0(triv1, cols)
+    f2 = get_f0(triv2, cols)
+    R = get_R_cross(triv1, triv2, cols)
+    n = length(cols)
+    xs = Vector{Float64}(undef, n)
+    ys = Vector{Float64}(undef, n)
+    for j in 1:n
+        xs[j], ys[j] = get_xy(R[j], 2 * f1[j] - 1, 2 * f2[j] - 1)
+    end
+    return xs, ys
+end

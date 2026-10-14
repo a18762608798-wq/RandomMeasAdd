@@ -22,8 +22,11 @@ summary json 只给人看，导入不需要它。
 返回
 - permuted_group::MeasurementGroup
 - permuted_sites：重排后的 site Index 对象。
+- G：校准向量（is_mitigation=false 时为 nothing）。
+- is_return_trivial=true 时追加第 4 个返回 trivial_group
+  （is_mitigation=false 时为 nothing，供 hamming 缓解标定用）。
 """
-function import_random_group(filepath::String; permuted_order=nothing, is_mitigation=false)
+function import_random_group(filepath::String; permuted_order=nothing, is_mitigation=false, is_return_trivial=false)
     group_data = npzread(filepath)
     # python 从 0 开始 -> julia 从 1 开始的 qubit 编号
     qubits_jl = vec(Int64.(group_data["meas_indices"])) .+ 1
@@ -47,6 +50,7 @@ function import_random_group(filepath::String; permuted_order=nothing, is_mitiga
 
     # trivial group
     G = nothing
+    permuted_trivial_group = nothing
     if is_mitigation
         @assert haskey(group_data, "trivial_measurement_results") "npz 缺少 trivial_measurement_results：生成该文件时未测 trivial 校准数据，is_mitigation 须为 false"
         @assert haskey(group_data, "trivial_measurement_settings") "npz 缺少 trivial_measurement_settings：生成该文件时未测 trivial 校准数据，is_mitigation 须为 false"
@@ -61,6 +65,9 @@ function import_random_group(filepath::String; permuted_order=nothing, is_mitiga
         # get G
         ψ0 = MPS(permuted_indices, "1")
         G = modified_get_calibration_vector(ψ0, permuted_trivial_group)
+    end
+    if is_return_trivial
+        return permuted_group, permuted_indices, G, permuted_trivial_group
     end
     return permuted_group, permuted_indices, G
 end
@@ -81,17 +88,19 @@ end
 - permuted_sites：重排后的 site Index 对象（两份共用）。
 - G1：实验一的校准向量（is_mitigation=false 时为 nothing）。
 - G2：实验二的校准向量（is_mitigation=false 时为 nothing）。
+- is_return_trivial=true 时追加第 6、7 个返回 (trivial_group1, trivial_group2)
+  （is_mitigation=false 时为 (nothing, nothing)，供 hamming 缓解标定用）。
 
 说明
 两份数据的被测 qubit 布局（meas_indices）必须一致，
 且设置数 NU 必须相等，否则逐行互关联无意义。
 """
-function import_random_pair(filepath1::String, filepath2::String; permuted_order=nothing, is_mitigation=false)
-    group1, permuted_indices1, G1 = import_random_group(
-        filepath1; permuted_order, is_mitigation
+function import_random_pair(filepath1::String, filepath2::String; permuted_order=nothing, is_mitigation=false, is_return_trivial=false)
+    group1, permuted_indices1, G1, trivial_group1 = import_random_group(
+        filepath1; permuted_order, is_mitigation, is_return_trivial=true
     )
-    group2, permuted_indices2, G2 = import_random_group(
-        filepath2; permuted_order, is_mitigation
+    group2, permuted_indices2, G2, trivial_group2 = import_random_group(
+        filepath2; permuted_order, is_mitigation, is_return_trivial=true
     )
     # 同一 frame、逐行配对：布局与设置数都须一致
     # （Index 的 == 比内部 id，两次导入各自构造 sites，故比 tags 与维数）
@@ -100,6 +109,9 @@ function import_random_pair(filepath1::String, filepath2::String; permuted_order
     @assert group1.N == group2.N "两份实验的比特数必须一致。"
     @assert group1.NU == group2.NU "两份实验的设置数必须一致且逐行配对。"
     @assert group1.NM == group2.NM "两份实验的每设置 shots 数必须一致。"
+    if is_return_trivial
+        return group1, group2, permuted_indices1, G1, G2, trivial_group1, trivial_group2
+    end
     return group1, group2, permuted_indices1, G1, G2
 end
 
