@@ -24,6 +24,14 @@ const _PAIR2 = joinpath(
     _DATADIR, "aer_pair_mit_pidx_1",
     "aer_pair_mit_pidx_1_exp2_setting0_settings243_shots1024.npz",
 )
+const _PAIRM1 = joinpath(
+    _DATADIR, "aer_pair_mit_pidx_-1",
+    "aer_pair_mit_pidx_-1_exp1_setting0_settings243_shots1024.npz",
+)
+const _PAIRM2 = joinpath(
+    _DATADIR, "aer_pair_mit_pidx_-1",
+    "aer_pair_mit_pidx_-1_exp2_setting0_settings243_shots1024.npz",
+)
 
 """内存中注入非对称读出噪声：物理 0（值 2）以 p01 翻成 1，物理 1 翻成 0 以 p10。"""
 function _inject_readout_noise(group; p01=0.08, p10=0.02, seed=1234)
@@ -69,16 +77,16 @@ end
     zr_rob = get_z_r_hamming(sgroup; trivial=strivial, is_mitigation=true)
     @test isapprox(zr_rob, zr_std; rtol=0.15)
 
-    g1, g2, _, _, _, t1, t2 = import_random_pair(
+    g1, g2, _, _, _, _, t2, p1 = import_random_pair(
         _PAIR1, _PAIR2; permuted_order=_PERM,
-        is_mitigation=true, is_return_trivial=true,
+        is_mitigation=true, is_return_trivial=true, is_return_trivial_plain=true,
     )
     zt_std = get_reversal_hamming(g1, g2)
-    zt_rob = get_reversal_hamming(g1, g2; trivial1=t1, trivial2=t2, is_mitigation=true)
+    zt_rob = get_reversal_hamming(g1, g2; trivial1=p1, trivial2=t2, is_mitigation=true)
     @test isapprox(zt_rob, zt_std; rtol=0.15)
 
     z_std = get_z_t_hamming(g1, g2)
-    z_rob = get_z_t_hamming(g1, g2; trivial1=t1, trivial2=t2, is_mitigation=true)
+    z_rob = get_z_t_hamming(g1, g2; trivial1=p1, trivial2=t2, is_mitigation=true)
     @test isapprox(z_rob, z_std; rtol=0.15)
 end
 
@@ -112,17 +120,47 @@ end
     @test abs(r_biased - r_clean) > 1e-3
     @test abs(r_fixed - r_clean) < abs(r_biased - r_clean)
 
-    g1, g2, _, _, _, t1, t2 = import_random_pair(
+    # z_r 比值：分子分母同向漂移相消一部分，剩余偏差小，仍要求方向改善。
+    zr_clean = get_z_r_hamming(sgroup)
+    zr_biased = get_z_r_hamming(snoisy)
+    zr_fixed = get_z_r_hamming(snoisy; trivial=snoisy_trivial, is_mitigation=true)
+    @test abs(zr_biased - zr_clean) > 1e-3
+    @test abs(zr_fixed - zr_clean) < abs(zr_biased - zr_clean)
+
+    # reversal / z_t 用 plain trivial（不带 u_T），与文件方法一致。
+    g1, g2, _, _, _, _, t2, p1 = import_random_pair(
         _PAIR1, _PAIR2; permuted_order=_PERM,
-        is_mitigation=true, is_return_trivial=true,
+        is_mitigation=true, is_return_trivial=true, is_return_trivial_plain=true,
     )
     n1 = _inject_readout_noise(g1; seed=1234)
     n2 = _inject_readout_noise(g2; seed=4321)
-    nt1 = _inject_readout_noise(t1; seed=111)
-    nt2 = _inject_readout_noise(t2; seed=222)
+    nt2 = _inject_readout_noise(t2; seed=111)
+    np1 = _inject_readout_noise(p1; seed=222)
     z_clean = get_reversal_hamming(g1, g2)
     z_biased = get_reversal_hamming(n1, n2)
-    z_fixed = get_reversal_hamming(n1, n2; trivial1=nt1, trivial2=nt2, is_mitigation=true)
+    z_fixed = get_reversal_hamming(n1, n2; trivial1=np1, trivial2=nt2, is_mitigation=true)
     @test abs(z_biased - z_clean) > 1e-3
     @test abs(z_fixed - z_clean) < abs(z_biased - z_clean)
+
+    # 归一化 z_t 正负两相：注噪后标准估计塌向 0，缓解版应回到真值符号与量级。
+    zt_clean = get_z_t_hamming(g1, g2)
+    zt_biased = get_z_t_hamming(n1, n2)
+    zt_fixed = get_z_t_hamming(n1, n2; trivial1=np1, trivial2=nt2, is_mitigation=true)
+    @test abs(zt_biased - zt_clean) > 1e-3
+    @test abs(zt_fixed - zt_clean) < abs(zt_biased - zt_clean)
+
+    m1, m2, _, _, _, _, mt2, mp1 = import_random_pair(
+        _PAIRM1, _PAIRM2; permuted_order=_PERM,
+        is_mitigation=true, is_return_trivial=true, is_return_trivial_plain=true,
+    )
+    k1 = _inject_readout_noise(m1; seed=1234)
+    k2 = _inject_readout_noise(m2; seed=4321)
+    kt2 = _inject_readout_noise(mt2; seed=111)
+    kp1 = _inject_readout_noise(mp1; seed=222)
+    mz_clean = get_z_t_hamming(m1, m2)
+    mz_biased = get_z_t_hamming(k1, k2)
+    mz_fixed = get_z_t_hamming(k1, k2; trivial1=kp1, trivial2=kt2, is_mitigation=true)
+    @test mz_clean < 0 # 拓扑相真值为负，先确认符号
+    @test abs(mz_biased - mz_clean) > 1e-3
+    @test abs(mz_fixed - mz_clean) < abs(mz_biased - mz_clean)
 end
