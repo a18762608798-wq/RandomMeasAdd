@@ -35,13 +35,15 @@ function get_reflect_shadow(
     shadows = get_dense_shadows(hgroup, ξ; G=permuted_G)
     adjacent_swap_op = create_adjacent_swap_op(ξ)
 
-    exps = [real(get_expect_shadow(adjacent_swap_op, sh)) for sh in shadows]
-    reflect_expect = mean(exps)
     if is_compute_sem
+        exps = [real(get_expect_shadow(adjacent_swap_op, sh)) for sh in shadows]
+        reflect_expect = mean(exps)
         sem = std(exps) / sqrt(length(exps))
         return reflect_expect, sem
     else
-        return reflect_expect
+        # 线性：先平均影子再求一次迹，与逐个求迹再平均同值，缩并次数少。
+        combined = sum(sh.rho for sh in shadows) / length(shadows)
+        return real(get_expect_shadow(adjacent_swap_op, Shadow(combined, length(ξ), ξ)))
     end
 end
 
