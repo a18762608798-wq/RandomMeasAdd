@@ -6,7 +6,7 @@
 由 shadow 数据估计二阶矩（纯度），并对随机幺正算 jackknife 估计。
 
 参数
-- shadows::Array{<:AbstractShadow, 2}：(n_ru, n_m) 的 shadow 数据。
+- shadows::Array{Shadow, 2}：(n_ru, n_m) 的 shadow 数据。
 
 关键词参数
 - is_compute_renyi::Bool=false：为 true 时返回 Rényi-2 熵估计
@@ -18,7 +18,7 @@
 - loos::Vector{Float64}：每个随机幺正的 leave-one-out jackknife 估计。
 """
 function get_purity_loos_shadow(
-    shadows::Array{<:AbstractShadow, 2}; is_compute_renyi::Bool=false, is_show_progress::Bool=true
+    shadows::Array{Shadow, 2}; is_compute_renyi::Bool=false, is_show_progress::Bool=true
 )
     n_ru, n_m = size(shadows)
     @assert n_ru ≥ 3 "At least 3 random unitaries are required for 2-moment estimation."
@@ -43,6 +43,6 @@ function get_purity_loos_shadow(
     return θ, loos
 end
 
-function get_purity_loos_shadow(shadows::Vector{<:AbstractShadow}; kwargs...)
+function get_purity_loos_shadow(shadows::Vector{Shadow}; kwargs...)
     return get_purity_loos_shadow(reshape(shadows, length(shadows), 1); kwargs...)
 end

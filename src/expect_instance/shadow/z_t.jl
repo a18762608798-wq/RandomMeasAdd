@@ -12,8 +12,8 @@ get_z_t_shadow(permuted_group, permuted_indices, G; is_compute_sem, is_show_prog
 用经典 shadow 算归一化时间反演不变量 z_t。
 
 参数
-- permuted_group::MeasurementGroup：已重排好的测量 group（independent 数据）。
-- permuted_indices：重排后的 site Index 对象。
+- permuted_group::HistGroup：已重排好的直方图 group（independent 数据）。
+- ξ::Vector{Index{Int64}}：重排后的 site index 向量。
 - G：已处于重排 frame 的校准权重向量（`nothing` 表示全 1）；
   子系统权重由本函数按奇偶位置索引得到，不需要调用方预拆。
 
@@ -31,36 +31,36 @@ get_z_t_shadow(permuted_group, permuted_indices, G; is_compute_sem, is_show_prog
 说明
 本函数：
 - 把 qubit 按相邻配对拆成奇偶两个子系统（奇位 = I_1、偶位 = I_2），
-- 为全系统和子系统分别构造 dense shadow，
+- 为全系统和子系统分别构造自有 shadow，
 - 构造 u_T 算符，
 - 经 get_z_t_loos_shadow 算 jackknife 值，得到估计和（可选的）SEM。
 """
 function get_z_t_shadow(
-    permuted_group,
-    permuted_indices,
+    hgroup::HistGroup,
+    ξ::Vector{Index{Int64}},
     G=nothing;
     is_compute_sem=false,
     is_show_progress=false,
 )
     # 取三个系统的信息
-    qubits_num = length(permuted_indices)
+    qubits_num = length(ξ)
     @assert iseven(qubits_num) "bitsnum must be even"
     pairs_num = qubits_num ÷ 2
     odd_order = [2i - 1 for i in 1:pairs_num]
     even_order = [2i for i in 1:pairs_num]
-    odd_group = reduce_to_subsystem(permuted_group, odd_order)
-    even_group = reduce_to_subsystem(permuted_group, even_order)
+    odd_group = reduce_to_subsystem(hgroup, odd_order)
+    even_group = reduce_to_subsystem(hgroup, even_order)
     # 取每个系统的 G（G 已处于重排 frame，只需按奇偶位置索引）
     permuted_G = isnothing(G) ? ones(qubits_num) : G
     odd_G = permuted_G[odd_order]
     even_G = permuted_G[even_order]
     # 生成 shadow
-    shadows = get_dense_shadows(permuted_group; G=permuted_G)
-    odd_shadows = get_dense_shadows(odd_group; G=odd_G)
-    even_shadows = get_dense_shadows(even_group; G=even_G)
+    shadows = get_dense_shadows(hgroup, ξ; G=permuted_G)
+    odd_shadows = get_dense_shadows(odd_group, ξ[odd_order]; G=odd_G)
+    even_shadows = get_dense_shadows(even_group, ξ[even_order]; G=even_G)
     # 生成算符
     uT = create_unitary_part_reversal_op(
-        odd_order, permuted_indices; op_type="ITensor"
+        odd_order, ξ; op_type="ITensor"
     )
 
     # 算期望和 sem
@@ -123,11 +123,12 @@ function get_z_t_shadow(
         end
         return vals, sems
     end
-    permuted_group, permuted_indices, G = import_random_group(
-        filepath; permuted_order, is_mitigation
-    )
+    hgroup, htrivial, _ = import_hist_group(filepath; permuted_order)
+    ξ = siteinds("Qubit", hgroup.N)
+    @assert !is_mitigation || !isnothing(htrivial) "is_mitigation=true 要求 npz 含 trivial hist（生成时须开 mitigation）。"
+    G = is_mitigation ? modified_get_calibration_vector(htrivial) : nothing
     return get_z_t_shadow(
-        permuted_group, permuted_indices, G;
+        hgroup, ξ, G;
         is_compute_sem, is_show_progress,
     )
 end

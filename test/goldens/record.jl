@@ -171,8 +171,8 @@ rec!("calib.cross_xy.aer", [P1_AER, P2_AER]) do
     RandomMeasAdd.get_cross_xy(p1, t2, 1:4)
 end
 rec!("calib.G.aer", [IND_AER]) do
-    _, _, G = import_random_group(IND_AER; permuted_order=PERM, is_mitigation=true)
-    (G,)
+    _, t, _ = import_hist_group(IND_AER; permuted_order=PERM)
+    (modified_get_calibration_vector(t),)
 end
 
 # 直接执行本文件 = 录制 values.toml；被 compare.jl include 时只注册不跑。

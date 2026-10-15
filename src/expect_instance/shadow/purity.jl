@@ -2,12 +2,13 @@
 # purity（纯度）
 # ----------
 """
-get_purity_shadow(permuted_group, G; is_compute_sem, is_show_progress)
+get_purity_shadow(hgroup, ξ, G; is_compute_sem, is_show_progress)
 
-用经典 shadow 从重排好的测量 group 估计纯度 Tr(ρ²)。
+用经典 shadow 从重排好的直方图 group 估计纯度 Tr(ρ²)。
 
 参数
-- permuted_group::MeasurementGroup：已重排好的测量 group。
+- hgroup::HistGroup：已重排好的直方图 group。
+- ξ::Vector{Index{Int64}}：重排后的 site index 向量。
 - G：已处于重排 frame 的校准权重向量（`nothing` 表示全 1）。
 
 关键词参数
@@ -19,18 +20,19 @@ get_purity_shadow(permuted_group, G; is_compute_sem, is_show_progress)
 - is_compute_sem == true：返回 (purity::Float64, sem::Float64)。
 
 说明
-本函数为重排好的 group 构造 dense shadow，
+本函数为重排好的 group 构造自有 shadow，
 再交给 modified_get_purity_shadow 做纯度估计。
 """
 function get_purity_shadow(
-    permuted_group,
+    hgroup::HistGroup,
+    ξ::Vector{Index{Int64}},
     G=nothing;
     is_compute_sem=false,
     is_show_progress=false,
 )
-    n_site = permuted_group.N
+    n_site = hgroup.N
     permuted_G = isnothing(G) ? ones(n_site) : G
-    shadows = get_dense_shadows(permuted_group; G=permuted_G)
+    shadows = get_dense_shadows(hgroup, ξ; G=permuted_G)
 
     if is_compute_sem
         purity, _, sem = modified_get_purity_shadow(
@@ -72,11 +74,12 @@ function get_purity_shadow(
     is_compute_sem=false,
     is_show_progress=false,
 )
-    permuted_group, _, G = import_random_group(
-        filepath; permuted_order, is_mitigation
-    )
+    hgroup, htrivial, _ = import_hist_group(filepath; permuted_order)
+    ξ = siteinds("Qubit", hgroup.N)
+    @assert !is_mitigation || !isnothing(htrivial) "is_mitigation=true 要求 npz 含 trivial hist（生成时须开 mitigation）。"
+    G = is_mitigation ? modified_get_calibration_vector(htrivial) : nothing
     return get_purity_shadow(
-        permuted_group, G;
+        hgroup, ξ, G;
         is_compute_sem, is_show_progress,
     )
 end

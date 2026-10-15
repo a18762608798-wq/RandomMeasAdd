@@ -3,14 +3,14 @@
 # --------------------------------------
 
 """
-get_z_r_shadow(permuted_group, permuted_indices, G; is_compute_sem, is_show_progress)
+get_z_r_shadow(hgroup, ξ, G; is_compute_sem, is_show_progress)
 
-用经典 shadow 估计 Z_r 量（反射相关的观测量），
+用自有 shadow 估计 Z_r 量（反射相关的观测量），
 做法是把系统按相邻 site 配对，再由这些配对算出 Z_r。
 
 参数
-- permuted_group::MeasurementGroup：已重排好的测量 group。
-- permuted_indices：重排后的 site Index 对象。
+- hgroup::HistGroup：已重排好的直方图 group。
+- ξ::Vector{Index{Int64}}：重排后的 site index 向量。
 - G：已处于重排 frame 的校准权重向量（`nothing` 表示全 1）；
   子系统权重由本函数按奇偶位置索引得到，不需要调用方预拆。
 
@@ -28,34 +28,34 @@ get_z_r_shadow(permuted_group, permuted_indices, G; is_compute_sem, is_show_prog
 说明
 本函数：
 - 把 qubit 按相邻配对拆成奇偶两个子系统，
-- 为全系统和子系统分别构造 dense shadow，
+- 为全系统和子系统分别构造自有 shadow，
 - 构造相邻 swap 算符，
 - 经 get_z_r_loos_shadow 算 jackknife 值，得到估计和（可选的）SEM。
 """
 function get_z_r_shadow(
-    permuted_group,
-    permuted_indices,
+    hgroup::HistGroup,
+    ξ::Vector{Index{Int64}},
     G=nothing;
     is_compute_sem=false,
     is_show_progress=false,
 )
     # 取三个系统的信息
-    qubits_num = length(permuted_indices)
+    qubits_num = length(ξ)
     pairs_num = qubits_num ÷ 2
     odd_order = [2i - 1 for i in 1:pairs_num]
     even_order = [2i for i in 1:pairs_num]
-    odd_group = reduce_to_subsystem(permuted_group, odd_order)
-    even_group = reduce_to_subsystem(permuted_group, even_order)
+    odd_group = reduce_to_subsystem(hgroup, odd_order)
+    even_group = reduce_to_subsystem(hgroup, even_order)
     # 取每个系统的 G（G 已处于重排 frame，只需按奇偶位置索引）
     permuted_G = isnothing(G) ? ones(qubits_num) : G
     odd_G = permuted_G[odd_order]
     even_G = permuted_G[even_order]
     # 生成 shadow
-    shadows = get_dense_shadows(permuted_group; G=permuted_G)
-    odd_shadows = get_dense_shadows(odd_group; G=odd_G)
-    even_shadows = get_dense_shadows(even_group; G=even_G)
+    shadows = get_dense_shadows(hgroup, ξ; G=permuted_G)
+    odd_shadows = get_dense_shadows(odd_group, ξ[odd_order]; G=odd_G)
+    even_shadows = get_dense_shadows(even_group, ξ[even_order]; G=even_G)
     # 生成算符
-    adjacent_swap_op = create_adjacent_swap_op(permuted_indices)
+    adjacent_swap_op = create_adjacent_swap_op(ξ)
 
     # 算期望和 sem
     # 取 jackknife 信息
@@ -116,11 +116,12 @@ function get_z_r_shadow(
         end
         return vals, sems
     end
-    permuted_group, permuted_indices, G = import_random_group(
-        filepath; permuted_order, is_mitigation
-    )
+    hgroup, htrivial, _ = import_hist_group(filepath; permuted_order)
+    ξ = siteinds("Qubit", hgroup.N)
+    @assert !is_mitigation || !isnothing(htrivial) "is_mitigation=true 要求 npz 含 trivial hist（生成时须开 mitigation）。"
+    G = is_mitigation ? modified_get_calibration_vector(htrivial) : nothing
     return get_z_r_shadow(
-        permuted_group, permuted_indices, G;
+        hgroup, ξ, G;
         is_compute_sem, is_show_progress,
     )
 end

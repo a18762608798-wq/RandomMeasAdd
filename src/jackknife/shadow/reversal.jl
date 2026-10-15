@@ -6,7 +6,7 @@
 由单实验 dense shadow 估计时间反演交叠 Z_T 分子，并算 jackknife 估计。
 
 参数
-- shadows::Vector{DenseShadow}：每设置的 dense shadow（已按 shots 平均），长度 n_ru。
+- shadows::Vector{Shadow}：每设置的 dense shadow（已按 shots 平均），长度 n_ru。
 - uT::ITensor：u_T 算符（I_1 区逐比特 σ^y）。
 - tpos::Vector{Int}：做部分转置的 site 位置（I_1 区）。
 
@@ -18,7 +18,7 @@
 - loos::Vector{Float64}：每个随机幺正的 leave-one-out jackknife 估计。
 """
 function get_reversal_loos_shadow(
-    shadows::Vector{DenseShadow},
+    shadows::Vector{Shadow},
     uT::ITensor,
     tpos::Vector{Int};
     is_show_progress=false,

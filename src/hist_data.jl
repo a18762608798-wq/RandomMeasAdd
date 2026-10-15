@@ -49,10 +49,10 @@ hist_dist(a::UInt64, b::UInt64) = count_ones(a ⊻ b)
 """
 reduce_to_subsystem(h, cols) -> HistGroup
 
-HistGroup 版子系统约化（显式扩展上游同名函数，多派发）：
+HistGroup 版子系统约化：
 只保留 cols 列，key 按 cols 顺序重排重编，settings 同步切片。
 """
-function RandomMeas.reduce_to_subsystem(h::HistGroup, cols::AbstractVector{Int})
+function reduce_to_subsystem(h::HistGroup, cols::AbstractVector{Int})
     @assert all(1 .<= cols .<= h.N) "列越界"
     @assert length(unique(cols)) == length(cols) "列不能重复"
     ms = map(h.measurements) do d
@@ -68,29 +68,6 @@ function RandomMeas.reduce_to_subsystem(h::HistGroup, cols::AbstractVector{Int})
         HistData(ks, [agg[k] for k in ks], d.nm, length(cols))
     end
     return HistGroup(ms, h.settings[:, cols, :, :], length(cols), h.NU, h.NM)
-end
-
-"""
-expand_hist(h) -> Array{Int,3}
-
-HistGroup 展开成旧格式 (NU, NM, N) 0/1 矩阵（shadow 过渡 shim 用，
-行顺序按 key 升序；估计子对 shot 置换对称，顺序无关）。
-"""
-function expand_hist(h::HistGroup)
-    mat = zeros(Int, h.NU, h.NM, h.N)
-    for (s, d) in enumerate(h.measurements)
-        row = 1
-        for (k, c) in zip(d.keys, d.counts)
-            for _ in 1:c
-                for j in 1:h.N
-                    mat[s, row, j] = hist_bit(k, j)
-                end
-                row += 1
-            end
-        end
-        @assert row == h.NM + 1 "展开行数不一致"
-    end
-    return mat
 end
 
 """

@@ -47,12 +47,11 @@ function get_overlap_robust(
 end
 
 """
-get_overlap(d1, d2; apply_bias_correction)（HistData 派发，显式扩展上游同名函数）
+get_overlap(d1, d2; apply_bias_correction)（HistData 派发，自有实现）
 
-单 setting 标准核交叠（x̂=2、ŷ=-1），数学同上游
-`get_overlap(::MeasurementData, ::MeasurementData)`。
+单 setting 标准核交叠（x̂=2、ŷ=-1），标准核交叠（x̂=2、ŷ=-1）。
 """
-function RandomMeas.get_overlap(
+function get_overlap(
     data1::HistData,
     data2::HistData;
     apply_bias_correction::Bool=false,

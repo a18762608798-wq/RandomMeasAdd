@@ -6,7 +6,7 @@
 对随机幺正的所有 k 元置换求 trace-product 平均，再对测量指标求平均。
 
 参数
-- shadows::Array{<:AbstractShadow, 2}：(n_ru, n_m) 的 shadow 数组，
+- shadows::Array{Shadow, 2}：(n_ru, n_m) 的 shadow 数组，
   n_ru 为随机幺正个数，n_m 为每个幺正下的测量次数。
 - k::Int：置换大小（只支持 1 或 2）。
 
@@ -20,7 +20,7 @@
   平均后的 trace-product 均值。
 """
 function get_comb_avgs_shadow(
-    shadows::Array{<:AbstractShadow, 2},
+    shadows::Array{Shadow, 2},
     k::Int;
     O::Union{Nothing, MPO}=nothing,
     is_show_progress=false,
@@ -93,8 +93,8 @@ get_reversal_pair_value(shadow_a, shadow_b_T, U, Ud, deltas)
 算一对 shadow 的时间反演交叠值 Tr(A·U·B_T·U†)（已验证过的缩并链）。
 
 参数
-- shadow_a::DenseShadow：第一个设置的 shadow（未转置）。
-- shadow_b_T::DenseShadow：第二个设置的 shadow（已在 I_1 区做部分转置）。
+- shadow_a::Shadow：第一个设置的 shadow（未转置）。
+- shadow_b_T::Shadow：第二个设置的 shadow（已在 I_1 区做部分转置）。
 - U::ITensor：u_T 算符（I_1 区逐比特 σ^y）。
 - Ud::ITensor：U 的 dagger（`dag(U)`，prime 层已验证）。
 - deltas::Vector{ITensor}：预先配好的 δ 张量（按 id 把 plev 0 与 plev 4 腿粘起来求迹）。
@@ -107,14 +107,14 @@ get_reversal_pair_value(shadow_a, shadow_b_T, U, Ud, deltas)
 最后用 deltas 缩掉首尾腿。括号内为 prime 层提升数。
 """
 function get_reversal_pair_value(
-    shadow_a::DenseShadow,
-    shadow_b_T::DenseShadow,
+    shadow_a::Shadow,
+    shadow_b_T::Shadow,
     U::ITensor,
     Ud::ITensor,
     deltas::Vector{ITensor},
 )
-    A = shadow_a.shadow_data
-    Bt = shadow_b_T.shadow_data
+    A = shadow_a.rho
+    Bt = shadow_b_T.rho
     M1 = A * prime(U, 1)
     M2 = M1 * prime(Bt, 2)
     M3 = M2 * prime(Ud, 3)
@@ -131,7 +131,7 @@ get_reversal_comb_avgs_shadow(shadows, uT, tpos; is_show_progress)
 对随机幺正的所有 2 元组合算时间反演交叠平均（shadow 版 Z_T 分子）。
 
 参数
-- shadows::Vector{DenseShadow}：每设置的 dense shadow（已按 shots 平均）。
+- shadows::Vector{Shadow}：每设置的 dense shadow（已按 shots 平均）。
 - uT::ITensor：u_T 算符。
 - tpos::Vector{Int}：做部分转置的 site 位置（I_1 区，重排 frame 下的奇位）。
 
@@ -147,7 +147,7 @@ get_reversal_comb_avgs_shadow(shadows, uT, tpos; is_show_progress)
 第二个上。转置 shadow 预先算好（NU 次），deltas 预先配好（1 次）。
 """
 function get_reversal_comb_avgs_shadow(
-    shadows::Vector{DenseShadow},
+    shadows::Vector{Shadow},
     uT::ITensor,
     tpos::Vector{Int};
     is_show_progress=false,
@@ -158,7 +158,7 @@ function get_reversal_comb_avgs_shadow(
     shadows_T = [partial_transpose(sh, tpos) for sh in shadows]
 
     # 预配 deltas：任取一对做出 M3，按 id 把 plev 0 腿与 plev 4 腿配起来
-    probe = shadows[1].shadow_data * prime(uT, 1) * prime(shadows_T[2].shadow_data, 2) * prime(Ud, 3)
+    probe = shadows[1].rho * prime(uT, 1) * prime(shadows_T[2].rho, 2) * prime(Ud, 3)
     r0 = [ind for ind in inds(probe) if plev(ind) == 0]
     s4 = [ind for ind in inds(probe) if plev(ind) == 4]
     deltas = ITensor[]

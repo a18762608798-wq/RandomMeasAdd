@@ -45,13 +45,12 @@ end
     end
 end
 
-@testset "legacy import_random_group still works on hist-v1" begin
-    # shadow 过渡 shim：hist→expand 后走原逻辑，返回元数不变。
+@testset "import_hist_group shape" begin
+    # hist 原生导入：group 对齐，trivial 缺席时为 nothing。
     mktempdir() do dir
         f = _write_hist_npz(dir, "s.npz", [[0x5, 0xa]], [[50, 50]], 100)
-        out3 = import_random_group(f; permuted_order=_PERM4)
-        @test length(out3) == 3
-        g, _, _ = out3
-        @test (g.N, g.NU, g.NM) == (4, 1, 100)
+        h, t, p = import_hist_group(f; permuted_order=_PERM4)
+        @test (h.N, h.NU, h.NM) == (4, 1, 100)
+        @test isnothing(t) && isnothing(p)
     end
 end

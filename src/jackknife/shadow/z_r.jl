@@ -6,10 +6,10 @@
 把 reflect 和 purity 估计组合起来，算 z_r 估计子及其 jackknife 值。
 
 参数
-- shadows::Array{<:AbstractShadow, 2}：算 reflect 算符期望用的 shadow
+- shadows::Array{Shadow, 2}：算 reflect 算符期望用的 shadow
   (n_ru, n_m)。
-- odd_shadows::Array{<:AbstractShadow, 2}：其中一个纯度分区的 shadow。
-- even_shadows::Array{<:AbstractShadow, 2}：另一个互补纯度分区的 shadow。
+- odd_shadows::Array{Shadow, 2}：其中一个纯度分区的 shadow。
+- even_shadows::Array{Shadow, 2}：另一个互补纯度分区的 shadow。
 - reflect_op::MPO：算 reflect 期望用的算符。
 
 关键词参数
@@ -24,9 +24,9 @@
   P_odd/P_even 为两个纯度估计。
 """
 function get_z_r_loos_shadow(
-    shadows::Array{<:AbstractShadow, 2},
-    odd_shadows::Array{<:AbstractShadow, 2},
-    even_shadows::Array{<:AbstractShadow, 2},
+    shadows::Array{Shadow, 2},
+    odd_shadows::Array{Shadow, 2},
+    even_shadows::Array{Shadow, 2},
     reflect_op::MPO,
     is_show_progress::Bool=true,
 )
@@ -80,9 +80,9 @@ end
 向量版简便重载：把输入 reshape 成二维再转调主函数 get_z_r_loos_shadow。
 """
 function get_z_r_loos_shadow(
-    shadows::Array{<:AbstractShadow, 1},
-    odd_shadows::Array{<:AbstractShadow, 1},
-    even_shadows::Array{<:AbstractShadow, 1},
+    shadows::Array{Shadow, 1},
+    odd_shadows::Array{Shadow, 1},
+    even_shadows::Array{Shadow, 1},
     reflect_op::MPO,
     is_show_progress::Bool=true,
 )

@@ -9,13 +9,13 @@
 # 只需普通单实验 independent 数据，不需要共轭配对。
 # 按本项目惯例：重排 frame 下奇位 = I_1 区，偶位 = I_2 区。
 """
-get_reversal_shadow(permuted_group, permuted_indices, G; is_compute_sem, is_show_progress)
+get_reversal_shadow(hgroup, ξ, G; is_compute_sem, is_show_progress)
 
-用经典 shadow 算时间反演交叠 Z_T 分子。
+用自有 shadow 算时间反演交叠 Z_T 分子。
 
 参数
-- permuted_group::MeasurementGroup：已重排好的测量 group（independent 数据）。
-- permuted_indices：重排后的 site Index 对象。
+- hgroup::HistGroup：已重排好的直方图 group（independent 数据）。
+- ξ::Vector{Index{Int64}}：重排后的 site index 向量。
 - G：已处于重排 frame 的校准权重向量（`nothing` 表示全 1）。
 
 关键词参数
@@ -27,26 +27,26 @@ get_reversal_shadow(permuted_group, permuted_indices, G; is_compute_sem, is_show
 - is_compute_sem == true：返回 (zt_est::Float64, sem::Float64)。
 
 说明
-本函数为重排后的系统构造 dense shadow，再构造 u_T 算符，
+本函数为重排后的系统构造自有 shadow，再构造 u_T 算符，
 经 get_reversal_loos_shadow 算估计和 jackknife SEM
 （k=2 路线，与 purity shadow 对齐）。
 """
 function get_reversal_shadow(
-    permuted_group,
-    permuted_indices,
+    hgroup::HistGroup,
+    ξ::Vector{Index{Int64}},
     G=nothing;
     is_compute_sem=false,
     is_show_progress=false,
 )
-    qubits_num = length(permuted_indices)
+    qubits_num = length(ξ)
     @assert iseven(qubits_num) "bitsnum must be even"
     pairs_num = qubits_num ÷ 2
     odd_order = [2i - 1 for i in 1:pairs_num]
 
     permuted_G = isnothing(G) ? ones(qubits_num) : G
-    shadows = get_dense_shadows(permuted_group; G=permuted_G)
+    shadows = get_dense_shadows(hgroup, ξ; G=permuted_G)
     uT = create_unitary_part_reversal_op(
-        odd_order, permuted_indices; op_type="ITensor"
+        odd_order, ξ; op_type="ITensor"
     )
 
     n_ru = length(shadows)
@@ -85,11 +85,12 @@ function get_reversal_shadow(
     is_compute_sem=false,
     is_show_progress=false,
 )
-    permuted_group, permuted_indices, G = import_random_group(
-        filepath; permuted_order, is_mitigation
-    )
+    hgroup, htrivial, _ = import_hist_group(filepath; permuted_order)
+    ξ = siteinds("Qubit", hgroup.N)
+    @assert !is_mitigation || !isnothing(htrivial) "is_mitigation=true 要求 npz 含 trivial hist（生成时须开 mitigation）。"
+    G = is_mitigation ? modified_get_calibration_vector(htrivial) : nothing
     return get_reversal_shadow(
-        permuted_group, permuted_indices, G;
+        hgroup, ξ, G;
         is_compute_sem, is_show_progress,
     )
 end

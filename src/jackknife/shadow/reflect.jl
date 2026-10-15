@@ -8,7 +8,7 @@
 由 shadow 数据估计一阶矩（期望值），并算 jackknife 估计。
 
 参数
-- shadows::Array{<:AbstractShadow, 2}：(n_ru, n_m) 的 shadow 数据。
+- shadows::Array{Shadow, 2}：(n_ru, n_m) 的 shadow 数据。
 
 关键词参数
 - O::Union{Nothing, MPO}=nothing：在 trace product 求值中用的 MPO 算符
@@ -20,7 +20,7 @@
 - loos::Vector{Float64}：每个随机幺正的 leave-one-out jackknife 估计。
 """
 function get_moment1_loos_shadow(
-    shadows::Array{<:AbstractShadow, 2};
+    shadows::Array{Shadow, 2};
     O::Union{Nothing, MPO}=nothing,
     is_show_progress::Bool=true,
 )
@@ -42,6 +42,6 @@ function get_moment1_loos_shadow(
     return θ, loos
 end
 
-function get_moment1_loos_shadow(shadows::Vector{<:AbstractShadow}; kwargs...)
+function get_moment1_loos_shadow(shadows::Vector{Shadow}; kwargs...)
     return get_moment1_loos_shadow(reshape(shadows, length(shadows), 1); kwargs...)
 end

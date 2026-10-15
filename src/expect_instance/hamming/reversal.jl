@@ -9,30 +9,8 @@
 # 实验二幺正 U^{(2)} = U_{I_1}^* ⊗ U_{I_2}（I_1 区取 Haar 部分的复共轭，I_2 区相同）。
 # 两份数据的设置必须逐行配对（qmeas ConjugatePair 保证）。
 # 按本项目惯例：重排 frame 下奇位 = I_1 区，偶位 = I_2 区。
-"""
-get_reversal_hamming(data1::MeasurementData, data2::MeasurementData)
-
-对单个配对设置，用 Hamming 距离法算两份实验的互关联（Z_T 分子）。
-
-参数
-- data1::MeasurementData：实验一（U_{I_1} u_T ⊗ U_{I_2}）的单个设置数据。
-- data2::MeasurementData：实验二（U_{I_1}^* ⊗ U_{I_2}）的同行设置数据。
-
-返回
-- zt_est::Float64：该设置下的 Z_T 估计值。
-
-说明
-直接调 get_overlap(data1, data2)（不加 bias 修正）：
-两份实验的 shots 相互独立，没有对角自配对，无需修正。
-"""
-function get_reversal_hamming(
-    data1::MeasurementData,
-    data2::MeasurementData,
-)
-    zt_est = get_overlap(data1, data2; apply_bias_correction=false)
-
-    return zt_est
-end
+# 单体互关联即标准核交叠 get_overlap（见 robust_hamming/kernels.jl），
+# 两份实验 shots 独立，不加 bias 修正。
 
 """
 get_reversal_hamming(group1, group2; trivial1, trivial2, is_mitigation, is_compute_sem, is_show_progress)
@@ -59,7 +37,7 @@ get_reversal_hamming(group1, group2; trivial1, trivial2, is_mitigation, is_compu
 
 说明
 本函数对每个配对设置调用
-get_reversal_hamming(::MeasurementData, ::MeasurementData)，
+get_reversal_hamming(::HistData, ::HistData)，
 （缓解时调 get_overlap_robust)，再对各设置求平均。线性平均不需要 jackknife。
 """
 function get_reversal_hamming(

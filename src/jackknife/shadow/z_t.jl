@@ -6,10 +6,10 @@
 把互关联和纯度估计组合起来，算 z_t 估计子及其 jackknife 值。
 
 参数
-- shadows::Array{DenseShadow, 2}：算互关联 Z_T 用的全系统 shadow
+- shadows::Array{Shadow, 2}：算互关联 Z_T 用的全系统 shadow
   (n_ru, n_m)。
-- odd_shadows::Array{DenseShadow, 2}：I_1 分区的 shadow。
-- even_shadows::Array{DenseShadow, 2}：I_2 分区的 shadow。
+- odd_shadows::Array{Shadow, 2}：I_1 分区的 shadow。
+- even_shadows::Array{Shadow, 2}：I_2 分区的 shadow。
 - uT::ITensor：u_T 算符（I_1 区逐比特 σ^y）。
 - tpos::Vector{Int}：做部分转置的 site 位置（I_1 区）。
 
@@ -26,9 +26,9 @@
   loos 经 get_combs_loos_shadow 对齐后组合。
 """
 function get_z_t_loos_shadow(
-    shadows::Array{DenseShadow, 2},
-    odd_shadows::Array{DenseShadow, 2},
-    even_shadows::Array{DenseShadow, 2},
+    shadows::Array{Shadow, 2},
+    odd_shadows::Array{Shadow, 2},
+    even_shadows::Array{Shadow, 2},
     uT::ITensor,
     tpos::Vector{Int},
     is_show_progress::Bool=true,
@@ -71,9 +71,9 @@ end
 向量版简便重载：把输入 reshape 成二维再转调主函数 get_z_t_loos_shadow。
 """
 function get_z_t_loos_shadow(
-    shadows::Array{DenseShadow, 1},
-    odd_shadows::Array{DenseShadow, 1},
-    even_shadows::Array{DenseShadow, 1},
+    shadows::Array{Shadow, 1},
+    odd_shadows::Array{Shadow, 1},
+    even_shadows::Array{Shadow, 1},
     uT::ITensor,
     tpos::Vector{Int},
     is_show_progress::Bool=true,

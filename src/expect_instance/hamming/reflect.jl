@@ -1,47 +1,7 @@
 # -------------
 # reflect 的 hamming 估计
 # -------------
-"""
-get_reflect_hamming(data::MeasurementData)
-
-对单个 MeasurementData 用 Hamming 距离法算反射期望值。
-
-参数
-- data::MeasurementData：单个测量数据集。
-
-返回
-- reflect_est::Float64：反射期望的估计值。
-
-说明
-估计子公式：R = (1/NM) * Σ_m 2^pairs * (-2)^(-hamming_dist(m))，
-其中系统按相邻奇偶 site 配成对。
-"""
-function get_reflect_hamming(
-    data::MeasurementData,
-)
-    # 取数据
-    qubits_num = data.N
-    m_num = data.NM
-    results = data.measurement_results
-    pairs_num = qubits_num ÷ 2
-    odd_order = [2i - 1 for i in 1:pairs_num]
-    even_order = [2i for i in 1:pairs_num]
-
-    # 算 reflect 估计
-    ssum = 0
-    for m_idx = 1:m_num
-        result = results[m_idx, :]
-        odd_result = @view result[odd_order]
-        even_result = @view result[even_order]
-        hamming_dist = sum(odd_result .!= even_result)
-        ssum += (-2.0)^(-hamming_dist)
-    end
-    ssum *= 2.0^pairs_num
-
-    reflect_est = ssum / m_num
-
-    return reflect_est
-end
+# 单体 get_reflect_hamming(data::HistData) 见 robust_hamming/kernels.jl。
 
 """
 get_reflect_hamming(group; trivial, is_mitigation, is_compute_sem, is_show_progress)
@@ -50,7 +10,7 @@ get_reflect_hamming(group; trivial, is_mitigation, is_compute_sem, is_show_progr
 对各随机幺正设置求平均。
 
 参数
-- group::MeasurementGroup：已重排好的测量 group。
+- group::HistGroup：已重排好的直方图 group。
 
 关键词参数
 - trivial：已重排好的 trivial（|0>）group（与 group 同 frame、列对齐），
@@ -67,7 +27,7 @@ get_reflect_hamming(group; trivial, is_mitigation, is_compute_sem, is_show_progr
 
 说明
 本函数对每个随机幺正设置调用
-get_reflect_hamming(::MeasurementData) 算 Hamming 距离反射估计
+get_reflect_hamming(::HistData) 算 Hamming 距离反射估计
 （缓解时调 get_reflect_robust)，再对各设置求平均。
 """
 function get_reflect_hamming(
