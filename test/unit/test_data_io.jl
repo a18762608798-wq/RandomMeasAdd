@@ -2,56 +2,56 @@ using Test
 using RandomMeasAdd
 using NPZ
 
-# data_io 单元测试：NM 失配断言（临时 npz，不依赖物理有效性，只切真实数组）。
+# data_io 单元测试（hist-v1）：NM 失配断言 + trivial 返回形状。
+# 手造最小 hist npz，不依赖真实数据文件。
 
-const _DATADIR = joinpath(@__DIR__, "..", "data")
-const _SMALL_NPZ = joinpath(
-    _DATADIR, "aer_independent_pidx_1",
-    "aer_independent_pidx_1_setting0_settings243_shots1024.npz",
-)
+const _PERM4 = [1, 2, 3, 4]
 
-"""由真实文件切出 (NU=5, NM=nm) 的最小 npz 写进临时目录。"""
-function _write_cut_npz(dir, name, nm)
-    raw = npzread(_SMALL_NPZ)
-    cut = Dict(
-        "measurement_results" => raw["measurement_results"][1:5, 1:nm, :],
-        "measurement_settings" => raw["measurement_settings"][1:5, :, :, :],
-        "meas_indices" => raw["meas_indices"],
-    )
-    path = joinpath(dir, name)
-    npzwrite(path, cut)
-    return path
+"""写最小 hist-v1 npz：单 setting，keys/counts 给定，settings 为零数组占位。"""
+function _write_hist_npz(dir, name, keys_list, counts_list, nm; n=4)
+    nu = length(keys_list)
+    offs = [0; cumsum(length.(keys_list))]
+    npzwrite(joinpath(dir, name), Dict(
+        "format_version" => Int64(1),
+        "measurement_hist_keys" => UInt64[k for ks in keys_list for k in ks],
+        "measurement_hist_counts" => Int64[c for cs in counts_list for c in cs],
+        "measurement_hist_offsets" => Int64.(offs),
+        "measurement_settings" => zeros(ComplexF64, nu, n, 2, 2),
+        "meas_indices" => Int64.(collect(0:n-1)),
+        "num_shots" => Int64(nm),
+    ))
+    return joinpath(dir, name)
 end
 
-@testset "import_random_pair NM mismatch" begin
+@testset "import_hist_pair NM mismatch" begin
     mktempdir() do dir
-        f1 = _write_cut_npz(dir, "a.npz", 100)
-        f2 = _write_cut_npz(dir, "b.npz", 200)
-        @test_throws AssertionError import_random_pair(
-            f1, f2; permuted_order=[1, 2, 3, 4]
-        )
+        f1 = _write_hist_npz(dir, "a.npz", [[0x0, 0x3]], [[60, 40]], 100)
+        f2 = _write_hist_npz(dir, "b.npz", [[0x0, 0x3]], [[120, 80]], 200)
+        @test_throws AssertionError import_hist_pair(f1, f2; permuted_order=_PERM4)
         # 同 NM 通过。
-        g1, g2, _, _, _ = import_random_pair(
-            f1, f1; permuted_order=[1, 2, 3, 4]
-        )
-        @test g1.NM == g2.NM == 100
+        h1, h2, _, _, _ = import_hist_pair(f1, f1; permuted_order=_PERM4)
+        @test h1.NM == h2.NM == 100
+        @test h1.N == h2.N == 4
     end
 end
 
-@testset "import_random_group trivial return" begin
-    # 默认三元组形状不变。
-    out3 = import_random_group(_SMALL_NPZ; permuted_order=[1, 2, 3, 4])
-    @test length(out3) == 3
-    # 开关打开给四元组；该文件生成时开 mitigation，trivial 应存在且对齐。
-    group, _, _, trivial = import_random_group(
-        _SMALL_NPZ; permuted_order=[1, 2, 3, 4],
-        is_mitigation=true, is_return_trivial=true,
-    )
-    @test !isnothing(trivial)
-    @test (trivial.N, trivial.NU, trivial.NM) == (group.N, group.NU, group.NM)
-    # 无 mitigation 时第四元为 nothing。
-    _, _, _, trivial_off = import_random_group(
-        _SMALL_NPZ; permuted_order=[1, 2, 3, 4], is_return_trivial=true,
-    )
-    @test isnothing(trivial_off)
+@testset "import_hist_group trivial return" begin
+    mktempdir() do dir
+        # 无 trivial 键：后两元为 nothing。
+        f = _write_hist_npz(dir, "s.npz", [[0x0, 0x1]], [[30, 70]], 100)
+        h, t, p = import_hist_group(f; permuted_order=_PERM4)
+        @test (h.N, h.NU, h.NM) == (4, 1, 100)
+        @test isnothing(t) && isnothing(p)
+    end
+end
+
+@testset "legacy import_random_group still works on hist-v1" begin
+    # shadow 过渡 shim：hist→expand 后走原逻辑，返回元数不变。
+    mktempdir() do dir
+        f = _write_hist_npz(dir, "s.npz", [[0x5, 0xa]], [[50, 50]], 100)
+        out3 = import_random_group(f; permuted_order=_PERM4)
+        @test length(out3) == 3
+        g, _, _ = out3
+        @test (g.N, g.NU, g.NM) == (4, 1, 100)
+    end
 end

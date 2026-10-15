@@ -7,6 +7,8 @@ export linkdims
 # 数据导入
 export import_random_group
 export import_random_pair
+export import_hist_group
+export import_hist_pair
 
 # shadow 工具
 export get_factorized_shadow_mpo

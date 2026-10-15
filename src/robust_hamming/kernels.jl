@@ -1,58 +1,45 @@
 # ---------------------
 # Robust Hamming 核估计子：把上游固定核 (2/-1) 换成逐单元标定核 (x̂/ŷ)。
 # ---------------------
-# 缩并链与上游 get_overlap(MeasurementProbability, MeasurementProbability)
-# 完全一致，唯一区别是每比特的核张量对角取 x̂、非对角取 ŷ，
-# 且不再乘全局 2^N（权重已含在 x̂、ŷ 里）。
+# 直接读直方图权重（精确改写，不展开）：单 setting 的交叠
+# Σ_{a,b} w_a w_b Π_i g_i(s^a_i, s^b_i) / (NM₁NM₂)，g 取 x̂（同）/ ŷ（异）；
+# 标准核 x̂=2、ŷ=-1 时 Πg = 2^N·(-2)^{-D}，与上游张量缩并数学一致。
+# 本文件不再用 ITensor（Phase 1 hamming 路零上游类型）。
 
 """
-由核权重构造单比特权重张量：对角 x̂，非对角 ŷ。
-等值比特（无论 0/1 侧）走对角，不等走非对角，故与 0/1↔1/2 的标号约定无关。
-"""
-function _get_weight_tensor(s::Index, s_prime::Index, x::Float64, y::Float64)
-    W = ITensor(Float64, s, s_prime)
-    W[s => 1, s_prime => 1] = x
-    W[s => 2, s_prime => 2] = x
-    W[s => 1, s_prime => 2] = y
-    W[s => 2, s_prime => 1] = y
-    return W
-end
-
-"""
-get_overlap_robust(data1, data2, xs, ys; apply_bias_correction=false)
-
-单 setting 的标定核交叠：Σ_{s,s'} Π_i g_i(s_i,s'_i) P₁(s)P₂(s')，
-经逐比特权重张量缩并求值（与上游同复杂度）。
+单 setting 标定核交叠：Σ_{a,b} w_a w_b Π_i g_i / (NM₁NM₂)，
+g_i 取 xs[i]（同）/ ys[i]（异）。
 
 bias 修正（purity 用）：对角项 K(s,s) = Πx̂ 与 s 无关，
 故修正量为 (Πx̂)/(NM-1)，即 raw*NM²/(NM*(NM-1)) - Πx̂/(NM-1)。
 标准核 x̂=2 时退化为上游公式（2^N 项）。
 """
 function get_overlap_robust(
-    data1::MeasurementData,
-    data2::MeasurementData,
+    data1::HistData,
+    data2::HistData,
     xs::AbstractVector{Float64},
     ys::AbstractVector{Float64};
     apply_bias_correction::Bool=false,
 )
-    N = data1.N
-    @assert N == data2.N "两份数据的比特数必须一致。"
+    N = data1.n
+    @assert N == data2.n "两份数据的比特数必须一致。"
     @assert length(xs) == length(ys) == N "核权重长度须等于比特数。"
-
-    prob1 = MeasurementProbability(data1)
-    prob2 = MeasurementProbability(data2)
-    xi1 = prob1.site_indices
-    xi2 = prob2.site_indices
-
-    overlap = prob1.measurement_probability
-    for i in 1:N
-        overlap *= _get_weight_tensor(xi1[i], prime(xi2[i]), xs[i], ys[i])
+    nm1, nm2 = data1.nm, data2.nm
+    raw = 0.0
+    for (ka, wa) in zip(data1.keys, data1.counts)
+        for (kb, wb) in zip(data2.keys, data2.counts)
+            prod = 1.0
+            for i in 1:N
+                prod *= hist_bit(ka, i) == hist_bit(kb, i) ? xs[i] : ys[i]
+            end
+            raw += wa * wb * prod
+        end
     end
-    raw = real(scalar(overlap * prob2.measurement_probability'))
+    raw /= nm1 * nm2
 
     if apply_bias_correction
-        @assert data1.NM == data2.NM "bias 修正要求两份数据的 shots 数一致。"
-        NM = data1.NM
+        @assert nm1 == nm2 "bias 修正要求两份数据的 shots 数一致。"
+        NM = nm1
         @assert NM ≥ 2 "bias 修正要求每 setting 至少 2 shots。"
         return raw * NM^2 / (NM * (NM - 1)) - prod(xs) / (NM - 1)
     end
@@ -60,14 +47,54 @@ function get_overlap_robust(
 end
 
 """
+get_overlap(d1, d2; apply_bias_correction)（HistData 派发，显式扩展上游同名函数）
+
+单 setting 标准核交叠（x̂=2、ŷ=-1），数学同上游
+`get_overlap(::MeasurementData, ::MeasurementData)`。
+"""
+function RandomMeas.get_overlap(
+    data1::HistData,
+    data2::HistData;
+    apply_bias_correction::Bool=false,
+)
+    N = data1.n
+    return get_overlap_robust(
+        data1, data2, fill(2.0, N), fill(-1.0, N);
+        apply_bias_correction,
+    )
+end
+
+"""
+get_reflect_hamming(data)
+
+单个 setting 的 Hamming 距离反射估计：
+(1/NM) Σ_u w_u 2^np (-2)^{-D(u)}，D 为相邻奇偶对内差异数，
+系统按相邻奇偶 site 配成对（与旧实现同式）。
+"""
+function get_reflect_hamming(data::HistData)
+    N = data.n
+    np = N ÷ 2
+    @assert 2 * np == N "reflect 要求偶数比特。"
+    ssum = 0.0
+    for (k, w) in zip(data.keys, data.counts)
+        D = 0
+        for p in 1:np
+            D += hist_bit(k, 2p - 1) != hist_bit(k, 2p)
+        end
+        ssum += w * 2.0^np * (-2.0)^(-D)
+    end
+    return ssum / data.nm
+end
+
+"""
 get_reflect_robust(data, as, bs, xs, ys)
 
-单 setting 的标定核反射估计：(1/NM) Σ_m Π_p g_p(s_{a_p}, s_{b_p})，
+单 setting 的标定核反射估计：(1/NM) Σ_u w_u Π_p g_p，
 镜像对逐发配对（Z_R 是一阶量，无 shot 配对、无 bias 修正）。
 xs/ys 按对编号（非比特编号）。
 """
 function get_reflect_robust(
-    data::MeasurementData,
+    data::HistData,
     as::AbstractVector{Int},
     bs::AbstractVector{Int},
     xs::AbstractVector{Float64},
@@ -76,15 +103,23 @@ function get_reflect_robust(
     np = length(as)
     @assert length(bs) == np "镜像对两侧数量必须一致。"
     @assert length(xs) == length(ys) == np "核权重长度须等于对数。"
-    res = data.measurement_results
-    nm = data.NM
     ssum = 0.0
-    for m in 1:nm
+    for (k, w) in zip(data.keys, data.counts)
         prod = 1.0
         for p in 1:np
-            prod *= res[m, as[p]] == res[m, bs[p]] ? xs[p] : ys[p]
+            prod *= hist_bit(k, as[p]) == hist_bit(k, bs[p]) ? xs[p] : ys[p]
         end
-        ssum += prod
+        ssum += w * prod
     end
-    return ssum / nm
+    return ssum / data.nm
+end
+
+"""
+get_reversal_hamming(data1, data2)（HistData 派发）
+
+单个配对设置的互关联（Z_T 分子）：标准核交叠，不加 bias 修正
+（两份实验 shots 独立，无对角自配对）。
+"""
+function get_reversal_hamming(data1::HistData, data2::HistData)
+    return get_overlap(data1, data2; apply_bias_correction=false)
 end

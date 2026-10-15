@@ -30,7 +30,9 @@ function check_entry(name)
     got = run_thunk(thunk)
     want = VALUES[name]["out"]
     length(got) == length(want) || error("$name 输出元数变了")
-    exact = startswith(name, "calib.")
+    # 只有 count 层整数数学（f0/R/xy）要求逐位一致；G 含张量缩并浮点求和，
+    # expand 行顺序变化可带来 ulp 漂移，走容差。
+    exact = occursin(r"f0R|_xy", name)
     for (i, (g, w)) in enumerate(zip(got, want))
         gv, wv = vec(g), vec(Float64.(w))
         length(gv) == length(wv) || error("$name[$i] 长度变了")

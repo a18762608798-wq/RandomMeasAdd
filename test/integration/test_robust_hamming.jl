@@ -33,29 +33,34 @@ const _PAIRM2 = joinpath(
     "aer_pair_mit_pidx_-1_exp2_setting0_settings243_shots1024.npz",
 )
 
-"""内存中注入非对称读出噪声：物理 0（值 2）以 p01 翻成 1，物理 1 翻成 0 以 p10。"""
-function _inject_readout_noise(group; p01=0.08, p10=0.02, seed=1234)
-    ng = deepcopy(group)
+"""内存中注入非对称读出噪声：物理 0（bit 0）以 p01 翻成 1，物理 1 翻成 0 以 p10。
+
+对 HistGroup 操作：每条 unique 按二项分布分裂权重（deepcopy，不动原数据）。
+"""
+function _inject_readout_noise(group::RandomMeasAdd.HistGroup; p01=0.08, p10=0.02, seed=1234)
     rng = MersenneTwister(seed)
-    for data in ng.measurements
-        res = data.measurement_results
-        for idx in eachindex(res)
-            v = res[idx]
-            r = rand(rng)
-            if v == 2 && r < p01
-                res[idx] = 1
-            elseif v == 1 && r < p10
-                res[idx] = 2
+    ng_measurements = map(group.measurements) do d
+        agg = Dict{UInt64,Int64}()
+        for (k, w) in zip(d.keys, d.counts)
+            for _ in 1:w
+                nk = k
+                for j in 1:d.n
+                    v = RandomMeasAdd.hist_bit(nk, j)
+                    if rand(rng) < (v == 0 ? p01 : p10)
+                        nk = nk ⊻ (UInt64(1) << (j - 1))
+                    end
+                end
+                agg[nk] = get(agg, nk, 0) + 1
             end
         end
+        ks = sort(collect(keys(agg)))
+        RandomMeasAdd.HistData(ks, [agg[k] for k in ks], d.nm, d.n)
     end
-    return ng
+    return RandomMeasAdd.HistGroup(ng_measurements, group.settings, group.N, group.NU, group.NM)
 end
 
 @testset "noiseless limit" begin
-    group, _, _, trivial = import_random_group(
-        _IND0; permuted_order=_PERM, is_mitigation=true, is_return_trivial=true,
-    )
+    group, trivial, _ = import_hist_group(_IND0; permuted_order=_PERM)
     # 核级：243-setting 标定统计下，核权重落在标准核附近。
     xs, ys = RandomMeasAdd.get_purity_xy(trivial, 1:4)
     @test all(abs.(xs .- 2.0) .< 0.25)
@@ -66,9 +71,7 @@ end
     @test isapprox(p_rob, p_std; rtol=0.15)
 
     # reflect / z_r 要求镜像对共享转角，用 shared 数据。
-    sgroup, _, _, strivial = import_random_group(
-        _SH0; permuted_order=_PERM, is_mitigation=true, is_return_trivial=true,
-    )
+    sgroup, strivial, _ = import_hist_group(_SH0; permuted_order=_PERM)
     r_std = get_reflect_hamming(sgroup; is_compute_sem=false)
     r_rob = get_reflect_hamming(sgroup; trivial=strivial, is_mitigation=true)
     @test isapprox(r_rob, r_std; rtol=0.15)
@@ -77,10 +80,7 @@ end
     zr_rob = get_z_r_hamming(sgroup; trivial=strivial, is_mitigation=true)
     @test isapprox(zr_rob, zr_std; rtol=0.15)
 
-    g1, g2, _, _, _, _, t2, p1 = import_random_pair(
-        _PAIR1, _PAIR2; permuted_order=_PERM,
-        is_mitigation=true, is_return_trivial=true, is_return_trivial_plain=true,
-    )
+    g1, g2, _, t2, p1 = import_hist_pair(_PAIR1, _PAIR2; permuted_order=_PERM)
     zt_std = get_reversal_hamming(g1, g2)
     zt_rob = get_reversal_hamming(g1, g2; trivial1=p1, trivial2=t2, is_mitigation=true)
     @test isapprox(zt_rob, zt_std; rtol=0.15)
@@ -93,9 +93,7 @@ end
 @testset "synthetic readout noise recovery" begin
     # 方法论要点：噪声同时进主数据和 trivial 数据（同一台设备、同 Λ），
     # 用不同随机流模拟两次独立运行。
-    group, _, _, trivial = import_random_group(
-        _IND0; permuted_order=_PERM, is_mitigation=true, is_return_trivial=true,
-    )
+    group, trivial, _ = import_hist_group(_IND0; permuted_order=_PERM)
     noisy = _inject_readout_noise(group; seed=1234)
     noisy_trivial = _inject_readout_noise(trivial; seed=4321)
     # 注入的是 p01=0.08/p10=0.02 非对称翻转，对应通道 δ=p10-p01=-0.06；
@@ -109,9 +107,7 @@ end
     @test abs(biased - clean) > 1e-3 # 噪声确实打偏了标准估计
     @test abs(fixed - clean) < abs(biased - clean) # 缓解把偏差收回来
 
-    sgroup, _, _, strivial = import_random_group(
-        _SH0; permuted_order=_PERM, is_mitigation=true, is_return_trivial=true,
-    )
+    sgroup, strivial, _ = import_hist_group(_SH0; permuted_order=_PERM)
     snoisy = _inject_readout_noise(sgroup; seed=1234)
     snoisy_trivial = _inject_readout_noise(strivial; seed=4321)
     r_clean = get_reflect_hamming(sgroup; is_compute_sem=false)
@@ -128,10 +124,7 @@ end
     @test abs(zr_fixed - zr_clean) < abs(zr_biased - zr_clean)
 
     # reversal / z_t 用 plain trivial（不带 u_T），与文件方法一致。
-    g1, g2, _, _, _, _, t2, p1 = import_random_pair(
-        _PAIR1, _PAIR2; permuted_order=_PERM,
-        is_mitigation=true, is_return_trivial=true, is_return_trivial_plain=true,
-    )
+    g1, g2, _, t2, p1 = import_hist_pair(_PAIR1, _PAIR2; permuted_order=_PERM)
     n1 = _inject_readout_noise(g1; seed=1234)
     n2 = _inject_readout_noise(g2; seed=4321)
     nt2 = _inject_readout_noise(t2; seed=111)
@@ -149,10 +142,7 @@ end
     @test abs(zt_biased - zt_clean) > 1e-3
     @test abs(zt_fixed - zt_clean) < abs(zt_biased - zt_clean)
 
-    m1, m2, _, _, _, _, mt2, mp1 = import_random_pair(
-        _PAIRM1, _PAIRM2; permuted_order=_PERM,
-        is_mitigation=true, is_return_trivial=true, is_return_trivial_plain=true,
-    )
+    m1, m2, _, mt2, mp1 = import_hist_pair(_PAIRM1, _PAIRM2; permuted_order=_PERM)
     k1 = _inject_readout_noise(m1; seed=1234)
     k2 = _inject_readout_noise(m2; seed=4321)
     kt2 = _inject_readout_noise(mt2; seed=111)

@@ -89,7 +89,7 @@ end
 """
 get_z_r_hamming(filepath; permuted_order, is_mitigation, is_compute_sem, is_show_progress)
 
-文件版重载：输入与 `import_random_group` 一致，先导入再调核心方法。
+文件版重载：输入与 `import_hist_group` 一致，先导入再调核心方法。
 
 参数
 - filepath::String：qmeas.random 生成的 .npz 文件路径。
@@ -129,9 +129,7 @@ function get_z_r_hamming(
         end
         return vals, sems
     end
-    group, _, _, trivial = import_random_group(
-        filepath; permuted_order, is_mitigation, is_return_trivial=true
-    )
+    group, trivial, _ = import_hist_group(filepath; permuted_order)
     return get_z_r_hamming(
         group;
         trivial, is_mitigation, is_compute_sem, is_show_progress,

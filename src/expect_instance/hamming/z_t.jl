@@ -119,7 +119,7 @@ end
 """
 get_z_t_hamming(filepath1, filepath2; permuted_order, is_mitigation, is_compute_sem, is_show_progress)
 
-文件版重载：经 `import_random_pair` 导入配对数据再调核心方法。
+文件版重载：经 `import_hist_pair` 导入配对数据再调核心方法。
 
 参数
 - filepath1::String：实验一的 .npz 文件路径。
@@ -130,7 +130,7 @@ get_z_t_hamming(filepath1, filepath2; permuted_order, is_mitigation, is_compute_
   两份实验测的是同一区间，必须共用同一 permuted_order。
 - is_mitigation::Bool=false：为 true 时用两份 npz 内 trivial 数据做
   Robust Hamming 缓解（要求生成数据时开 mitigation；且 exp1 文件须含
-  `trivial_plain`——新版 qmeas 生成，旧 pair 文件会报错提示重采）；
+  `trivial_plain_hist`——hist-v1 数据要求，旧 pair 文件会报错提示重采）；
   为 false 时忽略。
 - is_compute_sem::Bool：为 true 时同时返回 jackknife 偏差估计和 SEM。
 - is_show_progress::Bool：为 true 时显示进度。
@@ -172,10 +172,9 @@ function get_z_t_hamming(
         return vals, sems
     end
     if is_mitigation
-        # Z_T 标定要求实验一的 plain trivial（不带 u_T），见 import_random_group。
-        group1, group2, _, _, _, _, trivial2, plain1 = import_random_pair(
-            filepath1, filepath2; permuted_order, is_mitigation,
-            is_return_trivial=true, is_return_trivial_plain=true
+        # Z_T 标定要求实验一的 plain trivial（不带 u_T），见 import_hist_pair。
+        group1, group2, _, trivial2, plain1 = import_hist_pair(
+            filepath1, filepath2; permuted_order,
         )
         return get_z_t_hamming(
             group1,
@@ -183,8 +182,8 @@ function get_z_t_hamming(
             trivial1=plain1, trivial2, is_mitigation, is_compute_sem, is_show_progress,
         )
     end
-    group1, group2, _, _, _ = import_random_pair(
-        filepath1, filepath2; permuted_order, is_mitigation
+    group1, group2, _, _, _ = import_hist_pair(
+        filepath1, filepath2; permuted_order,
     )
     return get_z_t_hamming(
         group1,

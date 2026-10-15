@@ -3,6 +3,7 @@ module RandomMeasAdd
 include("imports.jl")
 
 # 数据导入
+include("hist_data.jl")
 include("data_io.jl")
 
 # shadow 工具

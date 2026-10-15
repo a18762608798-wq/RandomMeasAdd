@@ -47,11 +47,11 @@ end
 
 # ── hamming：purity（independent）──
 rec!("ham.purity.aer.std", [IND_AER]) do
-    g, _, _ = import_random_group(IND_AER; permuted_order=PERM)
+    g, _, _ = import_hist_group(IND_AER; permuted_order=PERM)
     get_purity_hamming(g; is_compute_sem=true)
 end
 rec!("ham.purity.aer.mit", [IND_AER]) do
-    g, _, _, triv = import_random_group(IND_AER; permuted_order=PERM, is_mitigation=true, is_return_trivial=true)
+    g, triv, _ = import_hist_group(IND_AER; permuted_order=PERM)
     get_purity_hamming(g; trivial=triv, is_mitigation=true, is_compute_sem=true)
 end
 rec!("ham.purity.quark.std", [IND_Q]) do
@@ -63,19 +63,19 @@ end
 
 # ── hamming：reflect / z_r（shared）──
 rec!("ham.reflect.aer.std", [SH_AER]) do
-    s, _, _ = import_random_group(SH_AER; permuted_order=PERM)
+    s, _, _ = import_hist_group(SH_AER; permuted_order=PERM)
     get_reflect_hamming(s; is_compute_sem=false)
 end
 rec!("ham.reflect.aer.mit", [SH_AER]) do
-    s, _, _, striv = import_random_group(SH_AER; permuted_order=PERM, is_mitigation=true, is_return_trivial=true)
+    s, striv, _ = import_hist_group(SH_AER; permuted_order=PERM)
     get_reflect_hamming(s; trivial=striv, is_mitigation=true)
 end
 rec!("ham.zr.aer.std", [SH_AER]) do
-    s, _, _ = import_random_group(SH_AER; permuted_order=PERM)
+    s, _, _ = import_hist_group(SH_AER; permuted_order=PERM)
     get_z_r_hamming(s; is_compute_sem=true)
 end
 rec!("ham.zr.aer.mit", [SH_AER]) do
-    s, _, _, striv = import_random_group(SH_AER; permuted_order=PERM, is_mitigation=true, is_return_trivial=true)
+    s, striv, _ = import_hist_group(SH_AER; permuted_order=PERM)
     get_z_r_hamming(s; trivial=striv, is_mitigation=true, is_compute_sem=true)
 end
 rec!("ham.reflect.quark.mit", [SH_Q]) do
@@ -87,57 +87,46 @@ end
 
 # ── hamming：reversal / z_t（pair；mit 用 plain1+trivial2）──
 rec!("ham.reversal.aer.std", [P1_AER, P2_AER]) do
-    g1, g2, _, _, _ = import_random_pair(P1_AER, P2_AER; permuted_order=PERM)
+    g1, g2, _, _, _ = import_hist_pair(P1_AER, P2_AER; permuted_order=PERM)
     get_reversal_hamming(g1, g2)
 end
 rec!("ham.reversal.aer.mit", [P1_AER, P2_AER]) do
-    g1, g2, _, _, _, _, t2, p1 = import_random_pair(
-        P1_AER, P2_AER; permuted_order=PERM,
-        is_mitigation=true, is_return_trivial=true, is_return_trivial_plain=true,
-    )
+    g1, g2, _, t2, p1 = import_hist_pair(P1_AER, P2_AER; permuted_order=PERM)
     get_reversal_hamming(g1, g2; trivial1=p1, trivial2=t2, is_mitigation=true)
 end
 rec!("ham.zt.aer.std", [P1_AER, P2_AER]) do
-    g1, g2, _, _, _ = import_random_pair(P1_AER, P2_AER; permuted_order=PERM)
+    g1, g2, _, _, _ = import_hist_pair(P1_AER, P2_AER; permuted_order=PERM)
     get_z_t_hamming(g1, g2; is_compute_sem=true)
 end
 rec!("ham.zt.aer.mit", [P1_AER, P2_AER]) do
-    g1, g2, _, _, _, _, t2, p1 = import_random_pair(
-        P1_AER, P2_AER; permuted_order=PERM,
-        is_mitigation=true, is_return_trivial=true, is_return_trivial_plain=true,
-    )
+    g1, g2, _, t2, p1 = import_hist_pair(P1_AER, P2_AER; permuted_order=PERM)
     get_z_t_hamming(g1, g2; trivial1=p1, trivial2=t2, is_mitigation=true, is_compute_sem=true)
 end
 # 拓扑相（pidx=-1，真值为负）
 rec!("ham.zt.aer.neg.mit", [M1_AER, M2_AER]) do
-    m1, m2, _, _, _, _, mt2, mp1 = import_random_pair(
-        M1_AER, M2_AER; permuted_order=PERM,
-        is_mitigation=true, is_return_trivial=true, is_return_trivial_plain=true,
-    )
+    m1, m2, _, mt2, mp1 = import_hist_pair(M1_AER, M2_AER; permuted_order=PERM)
     get_z_t_hamming(m1, m2; trivial1=mp1, trivial2=mt2, is_mitigation=true, is_compute_sem=true)
 end
 # 无 trivial pair：std only
 rec!("ham.reversal.aer.notriv", [NP1_AER, NP2_AER]) do
-    n1, n2, _, _, _ = import_random_pair(NP1_AER, NP2_AER; permuted_order=PERM)
+    n1, n2, _, _, _ = import_hist_pair(NP1_AER, NP2_AER; permuted_order=PERM)
     get_reversal_hamming(n1, n2)
 end
 rec!("ham.zt.aer.notriv", [NP1_AER, NP2_AER]) do
-    n1, n2, _, _, _ = import_random_pair(NP1_AER, NP2_AER; permuted_order=PERM)
+    n1, n2, _, _, _ = import_hist_pair(NP1_AER, NP2_AER; permuted_order=PERM)
     get_z_t_hamming(n1, n2)
 end
 # 真机 pair（有 trivial 无 plain：reversal 可缓解，z_t 只能 std）
 rec!("ham.reversal.quark.mit", [QP1_Q, QP2_Q]) do
-    q1, q2, _, _, _, qt1, qt2 = import_random_pair(
-        QP1_Q, QP2_Q; permuted_order=PERM, is_mitigation=true, is_return_trivial=true,
-    )
+    q1, q2, qt1, qt2, _ = import_hist_pair(QP1_Q, QP2_Q; permuted_order=PERM)
     get_reversal_hamming(q1, q2; trivial1=qt1, trivial2=qt2, is_mitigation=true)
 end
 rec!("ham.zt.quark.std", [QP1_Q, QP2_Q]) do
-    q1, q2, _, _, _ = import_random_pair(QP1_Q, QP2_Q; permuted_order=PERM)
+    q1, q2, _, _, _ = import_hist_pair(QP1_Q, QP2_Q; permuted_order=PERM)
     get_z_t_hamming(q1, q2)
 end
 rec!("ham.zt.quark.notriv", [NQP1, NQP2]) do
-    w1, w2, _, _, _ = import_random_pair(NQP1, NQP2; permuted_order=PERM)
+    w1, w2, _, _, _ = import_hist_pair(NQP1, NQP2; permuted_order=PERM)
     get_z_t_hamming(w1, w2)
 end
 
@@ -166,22 +155,19 @@ end
 
 # ── 标定量（count 层整数数学，Phase 1 要求逐位一致）──
 rec!("calib.purity_xy.aer", [IND_AER]) do
-    _, _, _, triv = import_random_group(IND_AER; permuted_order=PERM, is_mitigation=true, is_return_trivial=true)
+    _, triv, _ = import_hist_group(IND_AER; permuted_order=PERM)
     RandomMeasAdd.get_purity_xy(triv, 1:4)
 end
 rec!("calib.purity_f0R.aer", [IND_AER]) do
-    _, _, _, triv = import_random_group(IND_AER; permuted_order=PERM, is_mitigation=true, is_return_trivial=true)
+    _, triv, _ = import_hist_group(IND_AER; permuted_order=PERM)
     (RandomMeasAdd.get_f0(triv, 1:4), RandomMeasAdd.get_R_purity(triv, 1:4))
 end
 rec!("calib.mirror_xy.aer", [SH_AER]) do
-    _, _, _, striv = import_random_group(SH_AER; permuted_order=PERM, is_mitigation=true, is_return_trivial=true)
+    _, striv, _ = import_hist_group(SH_AER; permuted_order=PERM)
     RandomMeasAdd.get_mirror_xy(striv, [1, 3], [2, 4])
 end
 rec!("calib.cross_xy.aer", [P1_AER, P2_AER]) do
-    _, _, _, _, _, _, t2, p1 = import_random_pair(
-        P1_AER, P2_AER; permuted_order=PERM,
-        is_mitigation=true, is_return_trivial=true, is_return_trivial_plain=true,
-    )
+    _, _, _, t2, p1 = import_hist_pair(P1_AER, P2_AER; permuted_order=PERM)
     RandomMeasAdd.get_cross_xy(p1, t2, 1:4)
 end
 rec!("calib.G.aer", [IND_AER]) do
