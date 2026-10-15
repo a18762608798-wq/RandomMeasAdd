@@ -1,0 +1,131 @@
+["ham.zr.quark.mit"]
+files = ["/home/mintusr/sync/theory/physics/quant_comp/03_tools_practice/RandomMeasAdd/test/goldens/../../test/data/quark_dongling_pidx_1_shared/quark_dongling_pidx_1_shared_setting0_settings81_shots1024.npz"]
+out = [[0.7639923696187482], [-0.0004450229467422018], [0.03016454329104355]]
+
+["ham.reversal.aer.std"]
+files = ["/home/mintusr/sync/theory/physics/quant_comp/03_tools_practice/RandomMeasAdd/test/goldens/../../test/data/aer_pair_mit_pidx_1/aer_pair_mit_pidx_1_exp1_setting0_settings243_shots1024.npz", "/home/mintusr/sync/theory/physics/quant_comp/03_tools_practice/RandomMeasAdd/test/goldens/../../test/data/aer_pair_mit_pidx_1/aer_pair_mit_pidx_1_exp2_setting0_settings243_shots1024.npz"]
+out = [[1.0164514470983435]]
+
+["ham.reversal.aer.mit"]
+files = ["/home/mintusr/sync/theory/physics/quant_comp/03_tools_practice/RandomMeasAdd/test/goldens/../../test/data/aer_pair_mit_pidx_1/aer_pair_mit_pidx_1_exp1_setting0_settings243_shots1024.npz", "/home/mintusr/sync/theory/physics/quant_comp/03_tools_practice/RandomMeasAdd/test/goldens/../../test/data/aer_pair_mit_pidx_1/aer_pair_mit_pidx_1_exp2_setting0_settings243_shots1024.npz"]
+out = [[0.9422187708131406]]
+
+["shadow.zr.aer.mit"]
+files = ["/home/mintusr/sync/theory/physics/quant_comp/03_tools_practice/RandomMeasAdd/test/goldens/../../test/data/aer_independent_pidx_1/aer_independent_pidx_1_setting0_settings243_shots1024.npz"]
+out = [[0.9928455858268226], [-0.0008257773646587196], [0.14086674924053108]]
+
+["shadow.purity.aer.mit"]
+files = ["/home/mintusr/sync/theory/physics/quant_comp/03_tools_practice/RandomMeasAdd/test/goldens/../../test/data/aer_independent_pidx_1/aer_independent_pidx_1_setting0_settings243_shots1024.npz"]
+out = [[1.0639412638304544], [0.1576485691571216]]
+
+["calib.G.aer"]
+files = ["/home/mintusr/sync/theory/physics/quant_comp/03_tools_practice/RandomMeasAdd/test/goldens/../../test/data/aer_independent_pidx_1/aer_independent_pidx_1_setting0_settings243_shots1024.npz"]
+out = [[1.0002782586596604, 1.0019403621347194, 1.0024842035787884, 0.9995758042281943]]
+
+["ham.purity.aer.std"]
+files = ["/home/mintusr/sync/theory/physics/quant_comp/03_tools_practice/RandomMeasAdd/test/goldens/../../test/data/aer_independent_pidx_1/aer_independent_pidx_1_setting0_settings243_shots1024.npz"]
+out = [[1.0220488892433897], [0.06752321645469629]]
+
+["ham.reflect.quark.mit"]
+files = ["/home/mintusr/sync/theory/physics/quant_comp/03_tools_practice/RandomMeasAdd/test/goldens/../../test/data/quark_dongling_pidx_1_shared/quark_dongling_pidx_1_shared_setting0_settings81_shots1024.npz"]
+out = [[0.6499758498902762]]
+
+["ham.reflect.aer.std"]
+files = ["/home/mintusr/sync/theory/physics/quant_comp/03_tools_practice/RandomMeasAdd/test/goldens/../../test/data/aer_shared_pidx_1/aer_shared_pidx_1_setting0_settings243_shots1024.npz"]
+out = [[1.0520230516975309]]
+
+["shadow.zt.aer.mit"]
+files = ["/home/mintusr/sync/theory/physics/quant_comp/03_tools_practice/RandomMeasAdd/test/goldens/../../test/data/aer_independent_pidx_1/aer_independent_pidx_1_setting0_settings243_shots1024.npz"]
+out = [[1.02752557164783], [-0.00456857993890325], [0.08876571608120246]]
+
+["ham.zr.aer.mit"]
+files = ["/home/mintusr/sync/theory/physics/quant_comp/03_tools_practice/RandomMeasAdd/test/goldens/../../test/data/aer_shared_pidx_1/aer_shared_pidx_1_setting0_settings243_shots1024.npz"]
+out = [[0.9717927541045289], [-0.00021016958366526506], [0.020558699625046667]]
+
+["ham.purity.quark.mit"]
+files = ["/home/mintusr/sync/theory/physics/quant_comp/03_tools_practice/RandomMeasAdd/test/goldens/../../test/data/quark_dongling_pidx_1_independent/quark_dongling_pidx_1_independent_setting0_settings81_shots1024.npz"]
+out = [[0.6804656890310076], [0.07885884987372872]]
+
+["calib.mirror_xy.aer"]
+files = ["/home/mintusr/sync/theory/physics/quant_comp/03_tools_practice/RandomMeasAdd/test/goldens/../../test/data/aer_shared_pidx_1/aer_shared_pidx_1_setting0_settings243_shots1024.npz"]
+out = [[1.9419038230802061, 1.8550680302911118], [-0.9440713050374848, -0.8606144135925609]]
+
+["shadow.purity.aer.std"]
+files = ["/home/mintusr/sync/theory/physics/quant_comp/03_tools_practice/RandomMeasAdd/test/goldens/../../test/data/aer_independent_pidx_1/aer_independent_pidx_1_setting0_settings243_shots1024.npz"]
+out = [[1.0779595607796808], [0.1601309058554953]]
+
+["shadow.purity.quark.mit"]
+files = ["/home/mintusr/sync/theory/physics/quant_comp/03_tools_practice/RandomMeasAdd/test/goldens/../../test/data/quark_dongling_pidx_1_independent/quark_dongling_pidx_1_independent_setting0_settings81_shots1024.npz"]
+out = [[0.8794075210478136], [0.21764105159581743]]
+
+["ham.zt.aer.mit"]
+files = ["/home/mintusr/sync/theory/physics/quant_comp/03_tools_practice/RandomMeasAdd/test/goldens/../../test/data/aer_pair_mit_pidx_1/aer_pair_mit_pidx_1_exp1_setting0_settings243_shots1024.npz", "/home/mintusr/sync/theory/physics/quant_comp/03_tools_practice/RandomMeasAdd/test/goldens/../../test/data/aer_pair_mit_pidx_1/aer_pair_mit_pidx_1_exp2_setting0_settings243_shots1024.npz"]
+out = [[0.9787719582772746], [-0.0009664068904732259], [0.032212160714618944]]
+
+["ham.reversal.aer.notriv"]
+files = ["/home/mintusr/sync/theory/physics/quant_comp/03_tools_practice/RandomMeasAdd/test/goldens/../../test/data/aer_pair_pidx_1/aer_pair_pidx_1_exp1_setting0_settings243_shots1024.npz", "/home/mintusr/sync/theory/physics/quant_comp/03_tools_practice/RandomMeasAdd/test/goldens/../../test/data/aer_pair_pidx_1/aer_pair_pidx_1_exp2_setting0_settings243_shots1024.npz"]
+out = [[1.0107380666850525]]
+
+["ham.purity.quark.std"]
+files = ["/home/mintusr/sync/theory/physics/quant_comp/03_tools_practice/RandomMeasAdd/test/goldens/../../test/data/quark_dongling_pidx_1_independent/quark_dongling_pidx_1_independent_setting0_settings81_shots1024.npz"]
+out = [[0.2779113519830926], [0.02102312924535299]]
+
+["ham.zt.aer.neg.mit"]
+files = ["/home/mintusr/sync/theory/physics/quant_comp/03_tools_practice/RandomMeasAdd/test/goldens/../../test/data/aer_pair_mit_pidx_-1/aer_pair_mit_pidx_-1_exp1_setting0_settings243_shots1024.npz", "/home/mintusr/sync/theory/physics/quant_comp/03_tools_practice/RandomMeasAdd/test/goldens/../../test/data/aer_pair_mit_pidx_-1/aer_pair_mit_pidx_-1_exp2_setting0_settings243_shots1024.npz"]
+out = [[-1.1671751563460007], [-4.682571112413214e-6], [0.08638913195574364]]
+
+["ham.zt.aer.std"]
+files = ["/home/mintusr/sync/theory/physics/quant_comp/03_tools_practice/RandomMeasAdd/test/goldens/../../test/data/aer_pair_mit_pidx_1/aer_pair_mit_pidx_1_exp1_setting0_settings243_shots1024.npz", "/home/mintusr/sync/theory/physics/quant_comp/03_tools_practice/RandomMeasAdd/test/goldens/../../test/data/aer_pair_mit_pidx_1/aer_pair_mit_pidx_1_exp2_setting0_settings243_shots1024.npz"]
+out = [[0.9976793100333354], [-0.0010067363568835308], [0.03346033599914327]]
+
+["ham.zt.quark.notriv"]
+files = ["/home/mintusr/sync/theory/physics/quant_comp/03_tools_practice/RandomMeasAdd/test/goldens/../../test/data/quark_pair_pidx_1/quark_pair_pidx_1_exp1_setting0_settings81_shots1024.npz", "/home/mintusr/sync/theory/physics/quant_comp/03_tools_practice/RandomMeasAdd/test/goldens/../../test/data/quark_pair_pidx_1/quark_pair_pidx_1_exp2_setting0_settings81_shots1024.npz"]
+out = [[0.8743389757266993]]
+
+["calib.cross_xy.aer"]
+files = ["/home/mintusr/sync/theory/physics/quant_comp/03_tools_practice/RandomMeasAdd/test/goldens/../../test/data/aer_pair_mit_pidx_1/aer_pair_mit_pidx_1_exp1_setting0_settings243_shots1024.npz", "/home/mintusr/sync/theory/physics/quant_comp/03_tools_practice/RandomMeasAdd/test/goldens/../../test/data/aer_pair_mit_pidx_1/aer_pair_mit_pidx_1_exp2_setting0_settings243_shots1024.npz"]
+out = [[1.9635521415824118, 1.8620122072643301, 1.9645766750963103, 2.066315645202116], [-0.965758021172171, -0.867722323158325, -0.9692327306469066, -1.067100840331822]]
+
+["ham.purity.aer.mit"]
+files = ["/home/mintusr/sync/theory/physics/quant_comp/03_tools_practice/RandomMeasAdd/test/goldens/../../test/data/aer_independent_pidx_1/aer_independent_pidx_1_setting0_settings243_shots1024.npz"]
+out = [[0.9340276419562421], [0.06076792929441724]]
+
+["ham.zt.aer.notriv"]
+files = ["/home/mintusr/sync/theory/physics/quant_comp/03_tools_practice/RandomMeasAdd/test/goldens/../../test/data/aer_pair_pidx_1/aer_pair_pidx_1_exp1_setting0_settings243_shots1024.npz", "/home/mintusr/sync/theory/physics/quant_comp/03_tools_practice/RandomMeasAdd/test/goldens/../../test/data/aer_pair_pidx_1/aer_pair_pidx_1_exp2_setting0_settings243_shots1024.npz"]
+out = [[0.9929445777866249]]
+
+["shadow.reversal.aer.mit"]
+files = ["/home/mintusr/sync/theory/physics/quant_comp/03_tools_practice/RandomMeasAdd/test/goldens/../../test/data/aer_independent_pidx_1/aer_independent_pidx_1_setting0_settings243_shots1024.npz"]
+out = [[1.0639354919534658], [0.1576392210632263]]
+
+[_meta]
+commit = "12fd826d5811fe1181c2da357ccfc162e48b2425"
+perm = [1, 2, 3, 4]
+
+["ham.zr.aer.std"]
+files = ["/home/mintusr/sync/theory/physics/quant_comp/03_tools_practice/RandomMeasAdd/test/goldens/../../test/data/aer_shared_pidx_1/aer_shared_pidx_1_setting0_settings243_shots1024.npz"]
+out = [[1.028444870585607], [-0.00023856690237744616], [0.02251098863630659]]
+
+["ham.reversal.quark.mit"]
+files = ["/home/mintusr/sync/theory/physics/quant_comp/03_tools_practice/RandomMeasAdd/test/goldens/../../test/data/quark_dongling_pidx_1_pair/quark_dongling_pidx_1_pair_exp1_setting0_settings81_shots1024.npz", "/home/mintusr/sync/theory/physics/quant_comp/03_tools_practice/RandomMeasAdd/test/goldens/../../test/data/quark_dongling_pidx_1_pair/quark_dongling_pidx_1_pair_exp2_setting0_settings81_shots1024.npz"]
+out = [[0.7191657574246595]]
+
+["calib.purity_xy.aer"]
+files = ["/home/mintusr/sync/theory/physics/quant_comp/03_tools_practice/RandomMeasAdd/test/goldens/../../test/data/aer_independent_pidx_1/aer_independent_pidx_1_setting0_settings243_shots1024.npz"]
+out = [[1.9559943067696262, 1.8506108075773715, 1.956476976575284, 2.0663800327864967], [-0.9583204403105005, -0.8564250188722602, -0.960799275128915, -1.0672126127812516]]
+
+["calib.purity_f0R.aer"]
+files = ["/home/mintusr/sync/theory/physics/quant_comp/03_tools_practice/RandomMeasAdd/test/goldens/../../test/data/aer_independent_pidx_1/aer_independent_pidx_1_setting0_settings243_shots1024.npz"]
+out = [[0.4858740033436214, 0.47682773919753085, 0.4807540830761317, 0.4918499228395062], [0.6719660058243729, 0.6857777797891298, 0.6721335608801072, 0.6596941104342907]]
+
+["ham.zt.quark.std"]
+files = ["/home/mintusr/sync/theory/physics/quant_comp/03_tools_practice/RandomMeasAdd/test/goldens/../../test/data/quark_dongling_pidx_1_pair/quark_dongling_pidx_1_pair_exp1_setting0_settings81_shots1024.npz", "/home/mintusr/sync/theory/physics/quant_comp/03_tools_practice/RandomMeasAdd/test/goldens/../../test/data/quark_dongling_pidx_1_pair/quark_dongling_pidx_1_pair_exp2_setting0_settings81_shots1024.npz"]
+out = [[0.7310912124322918]]
+
+["shadow.reflect.aer.mit"]
+files = ["/home/mintusr/sync/theory/physics/quant_comp/03_tools_practice/RandomMeasAdd/test/goldens/../../test/data/aer_shared_pidx_1/aer_shared_pidx_1_setting0_settings243_shots1024.npz"]
+out = [[7.429191147546582], [0.4105608316401985]]
+
+["ham.reflect.aer.mit"]
+files = ["/home/mintusr/sync/theory/physics/quant_comp/03_tools_practice/RandomMeasAdd/test/goldens/../../test/data/aer_shared_pidx_1/aer_shared_pidx_1_setting0_settings243_shots1024.npz"]
+out = [[0.9465061251551418]]
