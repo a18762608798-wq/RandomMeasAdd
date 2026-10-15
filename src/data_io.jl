@@ -25,8 +25,14 @@ summary json 只给人看，导入不需要它。
 - G：校准向量（is_mitigation=false 时为 nothing）。
 - is_return_trivial=true 时追加第 4 个返回 trivial_group
   （is_mitigation=false 时为 nothing，供 hamming 缓解标定用）。
+- is_return_trivial_plain=true 时（须同时开 is_return_trivial）追加第 5 个
+  返回 trivial_plain_group：配对实验一的不带 u_T 的 plain 标定 group，
+  供 hamming Z_T 缓解用；缺键时报错（需新版 qmeas 重新生成 pair 数据）。
+  非 pair 文件该键恒缺席，此时只能为 nothing（断言保证）。
 """
-function import_random_group(filepath::String; permuted_order=nothing, is_mitigation=false, is_return_trivial=false)
+function import_random_group(filepath::String; permuted_order=nothing, is_mitigation=false, is_return_trivial=false, is_return_trivial_plain=false)
+    @assert !is_return_trivial_plain || is_return_trivial "is_return_trivial_plain 须配合 is_return_trivial 使用。"
+    @assert !is_return_trivial_plain || is_mitigation "is_return_trivial_plain 须配合 is_mitigation=true 使用（需读 trivial 数据）。"
     group_data = npzread(filepath)
     # python 从 0 开始 -> julia 从 1 开始的 qubit 编号
     qubits_jl = vec(Int64.(group_data["meas_indices"])) .+ 1
@@ -67,6 +73,16 @@ function import_random_group(filepath::String; permuted_order=nothing, is_mitiga
         G = modified_get_calibration_vector(ψ0, permuted_trivial_group)
     end
     if is_return_trivial
+        if is_return_trivial_plain
+            @assert haskey(group_data, "trivial_plain_measurement_results") "npz 缺少 trivial_plain_measurement_results：该 pair 文件系旧版 qmeas 生成（trivial_1 含 u_T，不可用于 hamming Z_T 标定），请用新版 qmeas 重新生成。"
+            plain_meas_res = 2 .- Int64.(group_data["trivial_plain_measurement_results"])
+            permuted_plain_group = MeasurementGroup(
+                plain_meas_res[:, :, permuted_order],
+                trivial_settings[:, permuted_order, :, :],
+                permuted_indices,
+            )
+            return permuted_group, permuted_indices, G, permuted_trivial_group, permuted_plain_group
+        end
         return permuted_group, permuted_indices, G, permuted_trivial_group
     end
     return permuted_group, permuted_indices, G
@@ -90,15 +106,27 @@ end
 - G2：实验二的校准向量（is_mitigation=false 时为 nothing）。
 - is_return_trivial=true 时追加第 6、7 个返回 (trivial_group1, trivial_group2)
   （is_mitigation=false 时为 (nothing, nothing)，供 hamming 缓解标定用）。
+- is_return_trivial_plain=true 时（须同时开前两个开关）追加第 8 个返回
+  plain_group1：实验一的不带 u_T 的 plain 标定 group，供 hamming Z_T
+  缓解用（此时 trivial1 照传，供 cross_xy 的只有 plain1 + trivial2）。
+  实验二的 plain 就是它自己的 trivial2，不另传。
 
 说明
 两份数据的被测 qubit 布局（meas_indices）必须一致，
 且设置数 NU 必须相等，否则逐行互关联无意义。
 """
-function import_random_pair(filepath1::String, filepath2::String; permuted_order=nothing, is_mitigation=false, is_return_trivial=false)
-    group1, permuted_indices1, G1, trivial_group1 = import_random_group(
-        filepath1; permuted_order, is_mitigation, is_return_trivial=true
-    )
+function import_random_pair(filepath1::String, filepath2::String; permuted_order=nothing, is_mitigation=false, is_return_trivial=false, is_return_trivial_plain=false)
+    if is_return_trivial_plain
+        group1, permuted_indices1, G1, trivial_group1, plain_group1 = import_random_group(
+            filepath1; permuted_order, is_mitigation,
+            is_return_trivial=true, is_return_trivial_plain=true,
+        )
+    else
+        group1, permuted_indices1, G1, trivial_group1 = import_random_group(
+            filepath1; permuted_order, is_mitigation, is_return_trivial=true,
+        )
+        plain_group1 = nothing
+    end
     group2, permuted_indices2, G2, trivial_group2 = import_random_group(
         filepath2; permuted_order, is_mitigation, is_return_trivial=true
     )
@@ -110,6 +138,9 @@ function import_random_pair(filepath1::String, filepath2::String; permuted_order
     @assert group1.NU == group2.NU "两份实验的设置数必须一致且逐行配对。"
     @assert group1.NM == group2.NM "两份实验的每设置 shots 数必须一致。"
     if is_return_trivial
+        if is_return_trivial_plain
+            return group1, group2, permuted_indices1, G1, G2, trivial_group1, trivial_group2, plain_group1
+        end
         return group1, group2, permuted_indices1, G1, G2, trivial_group1, trivial_group2
     end
     return group1, group2, permuted_indices1, G1, G2

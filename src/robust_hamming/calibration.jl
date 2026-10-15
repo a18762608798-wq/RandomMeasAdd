@@ -104,6 +104,8 @@ get_R_cross(group1, group2, cols) -> Vector{Float64}
 Z_T 配对的符合率 R̂：两份实验同列、全部 (k,k') 配对的符合分数，
 每 setting 按 (c0₁c0₂+c1₁c1₂)/NM² 算，再对 setting 平均。
 两份数据的 NM 必须一致（import_random_pair 已保证）。
+plain trivial 的 R̂ 正常应在 2/3 附近；若远低于 1/2（如 ~1/3），
+说明 trivial_1 混进了 u_T（|1> 态），标定无意义，此处直接告警。
 """
 function get_R_cross(group1, group2, cols::AbstractVector{Int}=1:group1.N)
     nus1 = group1.measurements
@@ -126,7 +128,11 @@ function get_R_cross(group1, group2, cols::AbstractVector{Int}=1:group1.N)
             R[j] += (c0a * c0b + (nm - c0a) * (nm - c0b)) / nm^2
         end
     end
-    return R ./ nu
+    R ./= nu
+    if any(R .< 0.45)
+        @warn "跨实验符合率 R̂ 远低于正常值（min=$(minimum(R))，正常 ~2/3）：trivial_1 可能混进了 u_T（|1> 态给出 ~1/3），请检查标定电路。" maxlog = 1
+    end
+    return R
 end
 
 """

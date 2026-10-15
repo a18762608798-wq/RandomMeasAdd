@@ -112,7 +112,9 @@ get_reversal_hamming(filepath1, filepath2; permuted_order, is_mitigation, is_com
 - permuted_order：全部被测 site 的置换向量，缺省 `nothing` 表示链式。
   两份实验测的是同一区间，必须共用同一 permuted_order。
 - is_mitigation::Bool=false：为 true 时用两份 npz 内 trivial 数据做
-  Robust Hamming 缓解（要求生成数据时开 mitigation）；为 false 时忽略。
+  Robust Hamming 缓解（要求生成数据时开 mitigation；且 exp1 文件须含
+  `trivial_plain`——新版 qmeas 生成，旧 pair 文件会报错提示重采）；
+  为 false 时忽略。
 - is_compute_sem::Bool：为 true 时计算各配对设置间的均值标准误差（SEM）。
 - is_show_progress::Bool：为 true 时显示进度。
 """
@@ -124,12 +126,24 @@ function get_reversal_hamming(
     is_compute_sem=false,
     is_show_progress=false,
 )
-    group1, group2, _, _, _, trivial1, trivial2 = import_random_pair(
-        filepath1, filepath2; permuted_order, is_mitigation, is_return_trivial=true
+    if is_mitigation
+        # Z_T 标定要求实验一的 plain trivial（不带 u_T），见 import_random_group。
+        group1, group2, _, _, _, _, trivial2, plain1 = import_random_pair(
+            filepath1, filepath2; permuted_order, is_mitigation,
+            is_return_trivial=true, is_return_trivial_plain=true,
+        )
+        return get_reversal_hamming(
+            group1,
+            group2;
+            trivial1=plain1, trivial2, is_mitigation, is_compute_sem, is_show_progress,
+        )
+    end
+    group1, group2, _, _, _ = import_random_pair(
+        filepath1, filepath2; permuted_order, is_mitigation
     )
     return get_reversal_hamming(
         group1,
         group2;
-        trivial1, trivial2, is_mitigation, is_compute_sem, is_show_progress,
+        is_mitigation, is_compute_sem, is_show_progress,
     )
 end
