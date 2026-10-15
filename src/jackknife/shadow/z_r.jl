@@ -30,44 +30,20 @@ function get_z_r_loos_shadow(
     reflect_op::MPO,
     is_show_progress::Bool=true,
 )
-    # 预先枚举置换（和测量的笛卡尔积）
     n_ru, _ = size(shadows)
     @assert n_ru ≥ 3 "At least 3 random unitaries are required for z_r estimation."
-    reflect_combs = collect(combinations(1:n_ru, 1))
-    purity_combs = collect(combinations(1:n_ru, 2))
 
-    # 每个置换对测量求平均
-    reflect_comb_avgs = get_comb_avgs_shadow(
-        shadows, 1; O=reflect_op, is_show_progress=is_show_progress
+    # 一阶矩（reflect）与二阶矩（纯度腿）各走加和口径，与旧组合口径一致。
+    reflect_expect, reflect_loos = get_moment1_loos_shadow(
+        shadows; O=reflect_op, is_show_progress=is_show_progress
     )
-    reflect_expect = mean(reflect_comb_avgs)
-    odd_comb_avgs = get_comb_avgs_shadow(
-        odd_shadows, 2; is_show_progress=is_show_progress
+    odd_expect, odd_loos = get_purity_loos_shadow(
+        odd_shadows; is_show_progress=is_show_progress
     )
-    odd_expect = mean(odd_comb_avgs)
-    even_comb_avgs = get_comb_avgs_shadow(
-        even_shadows, 2; is_show_progress=is_show_progress
+    even_expect, even_loos = get_purity_loos_shadow(
+        even_shadows; is_show_progress=is_show_progress
     )
-    even_expect = mean(even_comb_avgs)
 
-    # Loo 分组：leave-one-out。
-    # 取 reflect 的 leave-one-out。
-    reflect_loos = get_combs_loos_shadow(
-        n_ru,
-        reflect_combs,
-        reflect_comb_avgs,
-    )
-    # 取 purity 的 leave-one-out。
-    odd_loos = get_combs_loos_shadow(
-        n_ru,
-        purity_combs,
-        odd_comb_avgs,
-    )
-    even_loos = get_combs_loos_shadow(
-        n_ru,
-        purity_combs,
-        even_comb_avgs,
-    )
     # 取 z_r_loos
     Z_R(R_I_val, P_I1, P_I2) = R_I_val / sqrt((P_I1 + P_I2) / 2)
     z_r_est = Z_R(reflect_expect, odd_expect, even_expect)

@@ -23,7 +23,7 @@
 说明
 - z_t = Z_T / ((P_odd + P_even)/2)^(3/2)，其中 Z_T 为互关联，
   P_odd/P_even 为两个纯度估计；分子分母都是 k=2 置换平均，
-  loos 经 get_combs_loos_shadow 对齐后组合。
+  loos 经 leave-one-out 对齐后组合（分子分母各走加和口径）。
 """
 function get_z_t_loos_shadow(
     shadows::Array{Shadow, 2},
@@ -40,26 +40,14 @@ function get_z_t_loos_shadow(
     zt_expect, zt_loos = get_reversal_loos_shadow(
         vec(shadows), uT, tpos; is_show_progress=is_show_progress
     )
-    odd_comb_avgs = get_comb_avgs_shadow(
-        odd_shadows, 2; is_show_progress=is_show_progress
+    odd_expect, odd_loos = get_purity_loos_shadow(
+        odd_shadows; is_show_progress=is_show_progress
     )
-    odd_expect = mean(odd_comb_avgs)
-    even_comb_avgs = get_comb_avgs_shadow(
-        even_shadows, 2; is_show_progress=is_show_progress
+    even_expect, even_loos = get_purity_loos_shadow(
+        even_shadows; is_show_progress=is_show_progress
     )
-    even_expect = mean(even_comb_avgs)
 
-    # Loo 分组：leave-one-out。
-    odd_loos = get_combs_loos_shadow(
-        n_ru,
-        purity_combs,
-        odd_comb_avgs,
-    )
-    even_loos = get_combs_loos_shadow(
-        n_ru,
-        purity_combs,
-        even_comb_avgs,
-    )
+    # Loo 分组：leave-one-out 已在上式内完成，直接组合。
     Z_T_norm(Z_T_val, P_I1, P_I2) = Z_T_val / ((P_I1 + P_I2) / 2)^(3 / 2)
     z_t_est = Z_T_norm(zt_expect, odd_expect, even_expect)
     z_t_loos = Z_T_norm.(zt_loos, odd_loos, even_loos)

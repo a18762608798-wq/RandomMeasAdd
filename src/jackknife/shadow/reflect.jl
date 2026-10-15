@@ -24,20 +24,19 @@ function get_moment1_loos_shadow(
     O::Union{Nothing, MPO}=nothing,
     is_show_progress::Bool=true,
 )
-    n_ru, _ = size(shadows)
+    n_ru, n_m = size(shadows)
     @assert n_ru ≥ 2 "At least 2 random unitaries are required for 1-moment estimation."
-    combs = collect(combinations(1:n_ru, 1))
-
-    # 每个置换对测量求平均
-    comb_avgs = get_comb_avgs_shadow(shadows, 1; O=O, is_show_progress=is_show_progress)
-    θ = mean(comb_avgs)
-
-    # jackknife loo 分组：不含幺正 i 的置换
-    loos = get_combs_loos_shadow(
-        n_ru,
-        combs,
-        comb_avgs,
-    )
+    # k=1：一阶矩可直接加和（Σ_r T_r），loos 逐个摘除，与旧组合口径一致。
+    T_rs = Vector{Float64}(undef, n_ru)
+    @showprogress desc="Moments..." enabled=is_show_progress for r in 1:n_ru
+        s = 0.0
+        for m in 1:n_m
+            s += real(get_trace_product(shadows[r, m]; O))
+        end
+        T_rs[r] = s / n_m
+    end
+    θ = sum(T_rs) / n_ru
+    loos = [(sum(T_rs) - T_rs[i]) / (n_ru - 1) for i in 1:n_ru]
 
     return θ, loos
 end
